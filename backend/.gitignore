@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+node_modules/
+bower_components/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build and runtime artifacts
+dist/
+build/
+.DS_Store
+*.tsbuildinfo
+
+# Debugging files
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# npm or yarn lockfiles (if you use them, retain one)
+package-lock.json
+yarn.lock
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+.idea/
+
+# Sentry
+.sentryclirc
+
+# Misc
+coverage/
