@@ -1,30 +1,22 @@
 import React from 'react';
-import { View, Stylesheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
-const Card = ({ size = "medium", childreb, isDarkMode }) => {
-    //Determine the size styles dynamically
-    const sizeStyles =
-        size === 'xsmall'
-            ? styles.xsmall
-            : size === 'small'
-            ? styles.small
-            : size === 'large'
-            ? styles.large
-            : styles.medium
-
+const Card = ({ children, isDarkMode }) => {
     const backgroundColor = isDarkMode ? styles.darkBackground : styles.lightBackground;
 
     return (
-        <View style={[styles.card, sizeStyles, backgroundColor]}>
+        <View style={[styles.card,backgroundColor]}>
             {children}
         </View>
     );
 };
 
-const styles = Stylesheet.create({
+const styles = StyleSheet.create({
     card: {
         borderRadius: 10,
-        padding: 10,
+        borderWidth: 1.3,
+        borderColor: '#000',
+        padding: 25,
         marginVertical: 10,
         alignItems: 'center',
         justifyContent: 'center',
@@ -33,22 +25,6 @@ const styles = Stylesheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 3, // For android shadow
-    },
-    xsmall: {
-        width: 80,
-        height: 80,
-    },
-    small: {
-        width: 100,
-        height: 100,
-    },
-    medium: {
-        width: 200,
-        height: 150,
-    },
-    large: {
-        width: 300,
-        height: 200,
     },
     lightBackground: {
         backgroundColor: '#fff',
