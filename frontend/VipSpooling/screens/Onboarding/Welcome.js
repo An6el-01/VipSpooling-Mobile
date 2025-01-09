@@ -1,8 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ImageBackground, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import Card from '../../components/Card';
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
     container: {
         flex: 1,
         justifyContent: 'center',
@@ -39,9 +45,9 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
         textAlign: 'center',
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: '#000',
         borderRadius: 5,
-        backgroundColor: '#EA7E7E7',
+        backgroundColor: '#D6D2D2',
         fontSize: 18,
         color: '#000',
     },
@@ -83,67 +89,80 @@ const styles = StyleSheet.create({
     }
 });
 
-const Welcome = ({ isDarkMode }) => {
+const Welcome = () => {
+  const navigation = useNavigation();
+  const isDarkMode = useSelector((state) => state.theme.isDarkMode);
+
+  const backgroundImage = isDarkMode
+    ? require('../../assets/DarkMode.jpg')
+    : require('../../assets/LightMode.jpg');
+
     return (
-      <View style={styles.container}>
-        {/* LOGO */}
-        <Image
-          source={require('../../assets/VipSpoolingLogo.png')}
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
-  
-        {/* TITLE */}
-        <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000' }]}>
-          Insert Your Invite Code
-        </Text>
-  
-        {/* Card Component */}
-        <Card isDarkMode={isDarkMode}>
-          {/* INVITE CODE INPUT AREA */}
-          <View style={styles.codeInputContainer}>
-            <TextInput
-              style={[styles.codeInput, { color: isDarkMode ? '#fff' : '#000' }]}
-              maxLength={1}
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={[styles.codeInput, { color: isDarkMode ? '#fff' : '#000' }]}
-              maxLength={1}
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={[styles.codeInput, { color: isDarkMode ? '#fff' : '#000' }]}
-              maxLength={1}
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={[styles.codeInput, { color: isDarkMode ? '#fff' : '#000' }]}
-              maxLength={1}
-              keyboardType="numeric"
-            />
-          </View>
-  
-          {/* SUBMIT BUTTON */}
-          <TouchableOpacity style={styles.submitButton}>
-            <Text style={[styles.submitButtonText, { color: isDarkMode ? '#000' : '#000' }]}>
-              Submit
-            </Text>
-          </TouchableOpacity>
-  
-          {/* EXISTING ACCOUNT BUTTON */}
-          <TouchableOpacity>
-            <Text style={[styles.existingAccountText, { color: isDarkMode ? '#fff' : '#000' }]}>
-              Already Have An Account?
-            </Text>
-            <TouchableOpacity style={styles.clickHereButton}>
-              <Text style={[styles.clickHereButtonText, { color: isDarkMode ? '#000' : '#000' }]}>
-                Click Here
+      <ImageBackground source={backgroundImage} style={styles.background}>
+        <KeyboardAvoidingView style={styles.container} behavior='padding' keyboardVerticalOffset={1}>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.container}>
+              {/* LOGO */}
+              <Image
+                source={require('../../assets/VipSpoolingLogo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+        
+              {/* TITLE */}
+              <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000' }]}>
+                Insert Your Invite Code
               </Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Card>
-      </View>
+        
+              {/* Card Component */}
+              <Card isDarkMode={isDarkMode}>
+                {/* INVITE CODE INPUT AREA */}
+                <View style={styles.codeInputContainer}>
+                  <TextInput
+                    style={[styles.codeInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                    maxLength={1}
+                    keyboardType="numeric"
+                  />
+                  <TextInput
+                    style={[styles.codeInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                    maxLength={1}
+                    keyboardType="numeric"
+                  />
+                  <TextInput
+                    style={[styles.codeInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                    maxLength={1}
+                    keyboardType="numeric"
+                  />
+                  <TextInput
+                    style={[styles.codeInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                    maxLength={1}
+                    keyboardType="numeric"
+                  />
+                </View>
+        
+                {/* SUBMIT BUTTON */}
+                <TouchableOpacity style={styles.submitButton}>
+                  <Text style={[styles.submitButtonText, { color: isDarkMode ? '#000' : '#000' }]}>
+                    Submit
+                  </Text>
+                </TouchableOpacity>
+        
+                {/* EXISTING ACCOUNT BUTTON */}
+                <TouchableOpacity>
+                  <Text style={[styles.existingAccountText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                    Already Have An Account?
+                  </Text>
+                  <TouchableOpacity style={styles.clickHereButton} onPress={() => navigation.navigate('SignIn')}>
+                    <Text style={[styles.clickHereButtonText, { color: isDarkMode ? '#000' : '#000' }] }>
+                      Click Here
+                    </Text>
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              </Card>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </ImageBackground>
     );
   };
 
