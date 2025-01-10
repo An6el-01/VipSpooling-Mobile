@@ -141,7 +141,7 @@ const Welcome = () => {
                 </View>
         
                 {/* SUBMIT BUTTON */}
-                <TouchableOpacity style={styles.submitButton}>
+                <TouchableOpacity style={styles.submitButton} onPress={() => navigation.navigate('SetUp')}>
                   <Text style={[styles.submitButtonText, { color: isDarkMode ? '#000' : '#000' }]}>
                     Submit
                   </Text>

@@ -75,8 +75,8 @@ const styles = StyleSheet.create({
     },
     goBackButton: {
         position: 'absolute',
-        top: 80, // Distance from the top
-        left: 20, // Distance from the left
+        top: 30, // Distance from the top
+        left: 2, // Distance from the left
         flexDirection: 'column', // Align icon and text horizontally
         alignItems: 'center',
     },
