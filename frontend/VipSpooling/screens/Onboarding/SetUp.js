@@ -227,7 +227,7 @@ const SetUp = () => {
                                 {/*CONTINUE BUTTON
                                     - ONLY ACCSSIBLE IF: TERMS AND CONDITIOND AND PRIVACY POLICY IS AGREED WITH
                                 */}
-                                <TouchableOpacity style={styles.continueButton}>
+                                <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('Home')}>
                                     <Text style={[styles.continueButtonText, { color: isDarkMode ? '#000' : '#000' }]}>
                                         Continue
                                     </Text>

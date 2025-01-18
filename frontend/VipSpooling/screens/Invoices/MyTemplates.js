@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet,View, Text, TouchableOpacity, ImageBackground} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 
@@ -13,32 +13,29 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
-    }
+    },
 });
 
-const NewTeamMember = () => {
+const MyTemplates = () => {
     const navigation = useNavigation();
-    const isDarkMode = useSelector((state) => state.theme.isDarkMode);
+    const isDarkMode = useSelector((state) =>  state.theme.isDarkMode);
 
     const backgroundImage = isDarkMode
-    ? require('../../../assets/DarkMode.jpg')
-    : require('../../../assets/LightMode.jpg')
+    ? require('../../assets/DarkMode.jpg')
+    : require('../../assets/LightMode.jpg') 
 
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
             <View style={styles.container}>
-            <Text> New Team Member Page</Text>
                 <TouchableOpacity
                     onPress={() => {
-                        navigation.navigate('Home');
+                        navigation.navigate("Home")
                     }}>
-                    <Text>
-                        Back Home
-                    </Text>
+                    <Text> Go Back Home</Text>
                 </TouchableOpacity>
             </View>
         </ImageBackground>
     );
 };
 
-export default NewTeamMember;
+export default MyTemplates;

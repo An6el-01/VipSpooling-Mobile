@@ -165,7 +165,7 @@ const SignIn = () => {
                                 </View>
 
                                 {/* SIGN-IN BUTTON */}
-                                <TouchableOpacity style={styles.signInButton}>
+                                <TouchableOpacity style={styles.signInButton} onPress={navigation.navigate('Home')}>
                                     <Text style={[styles.signInButtonText, { color: isDarkMode ? '#000' : '#000' }]}>
                                         Sign In
                                     </Text>

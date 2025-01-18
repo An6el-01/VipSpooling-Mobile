@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 
-const Card = ({ children, isDarkMode }) => {
+const Card = ({ children, isDarkMode, style }) => {
     const backgroundColor = isDarkMode ? styles.darkBackground : styles.lightBackground;
 
     return (
-        <View style={[styles.card,backgroundColor]}>
+        <View style={[styles.card,backgroundColor, style]}>
             {children}
         </View>
     );
@@ -15,8 +15,7 @@ const styles = StyleSheet.create({
     card: {
         borderRadius: 10,
         borderWidth: 1.3,
-        borderColor: '#000',
-        padding: 25,
+        padding: 23,
         marginVertical: 10,
         alignItems: 'center',
         justifyContent: 'center',
@@ -28,9 +27,11 @@ const styles = StyleSheet.create({
     },
     lightBackground: {
         backgroundColor: '#fff',
+        borderColor: '#000'
     },
     darkBackground: {
-        backgroundColor: '#333',
+        backgroundColor: '#000',
+        borderColor: '#fff',
     },
 });
 
