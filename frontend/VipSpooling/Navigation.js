@@ -21,32 +21,31 @@ import Plans from './screens/Plans';
 const styles = StyleSheet.create({
     tabBar: {
         position: 'absolute',
-        width: '90%',  // Maintain 90% width
-        bottom: 20,  // Positioned above screen bottom for better UI
-        height: 75,  // Proper touch area
-        borderRadius: 20,  // Rounded corners for aesthetics
-        alignSelf: 'center',  // Center the tab bar
+        width: '90%',  
+        bottom: 20,  
+        height: 75,  
+        marginLeft: 20,  // not centered properly
         backgroundColor: '#fff',
-        borderWidth: 2, // Uniform border width
-        borderColor: '#000',  // High contrast for light mode
-        shadowColor: '#000', 
-        shadowOffset: { width: 0, height: 6 }, // More pronounced shadow
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 10,  // For Android shadow effect
+        borderRadius: 20, 
+        borderWidth: 1.3,
+        borderTopWidth: 2,
+        borderColor: '#000'
     },
     darkModeTabBar: {
         backgroundColor: '#000',
-        borderColor: '#fff',  // High contrast for dark mode
+
+        borderColor: '#fff',
     },
     tabIcon: {
-        width: 34,
-        height: 34,
+        top: 18,
+        width: 30,
+        height: 30,
+        marginBottom:20,
     },
     tabLabel: {
-        fontSize: 14,  // Improved readability
-        fontWeight: '600',
-        letterSpacing: 0.8,  // Better letter spacing for legibility
+        fontSize: 11,
+        top:15,
+        left: 1, //not centered properly
     }
 });
 
@@ -94,16 +93,13 @@ const TabNavigation = () => {
               />
             );
           },
-          tabBarActiveTintColor: isDarkMode ? '#F7AD00' : '#555',
+          tabBarActiveTintColor: isDarkMode ? '#F7AD00' : '#F7AD00',
           tabBarInactiveTintColor: isDarkMode ? '#fff' : '#000',
           tabBarStyle: [
             styles.tabBar,
             isDarkMode ? styles.darkModeTabBar : null,
-            {
-              tabBarLabelStyle: styles.tabLabel,
-              tabBarShowLabel: true,
-            },
           ],
+          tabBarLabelStyle: styles.tabLabel,
         })}
       >
         <Tab.Screen
@@ -119,7 +115,7 @@ const TabNavigation = () => {
             </InnerStack.Navigator>
           )}
         </Tab.Screen>
-        <Tab.Screen name="Invoices" component={MyInvoices} options={{headerShown: false}}/>
+        <Tab.Screen name="Invoices" component={MyInvoices} options={{headerShown: false}} />
         <Tab.Screen name="My Team" component={MyTeam} options={{headerShown: false}}/>
         <Tab.Screen name="Plans" component={Plans} options={{headerShown: false}}/>
         </Tab.Navigator>

@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '700',
     color: '#000',
-    marginBottom: 20,
+    marginBottom: 10,
     top: 40,
   },
   sectionContainer: {
@@ -166,7 +166,7 @@ const Dashboard = () => {
         </View>
 
         {/* Add New User & My Templates Section */}
-        <Card isDarkMode={isDarkMode} style={{padding: 15, width: '80%', alignSelf: 'center'}}>
+        <Card isDarkMode={isDarkMode} style={{padding: 15, width: '80%', alignSelf: 'center', marginTop: 15}}>
           <View style={styles.sectionButton}>
             <TouchableOpacity onPress={() => {navigation.navigate('NewTeamMember')}}>
               <Image
