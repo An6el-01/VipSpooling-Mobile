@@ -96,6 +96,27 @@ const styles = StyleSheet.create({
         height: 30,
         tintColor: '#000',
     },
+    fab: {
+        position: 'absolute',
+        backgroundColor: '#2196F3',
+        bottom: -20,
+        right: -16,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {Width: 0, height: 4},
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 6,
+    },
+    fabIcon: {
+        width: 30,
+        height: 30,
+        tintColor: '#fff',
+    },
 });
 
 const MyInvoices = () => {
@@ -181,6 +202,16 @@ const MyInvoices = () => {
                                 </View>
                             ))}
                         </Card>
+                        {/*FLOATING ADD BUTTON*/}
+                        <TouchableOpacity
+                            style={styles.fab}
+                            //ADD ON Press
+                        >
+                            <Image
+                                source={require('../../assets/plus.png')}
+                                style={styles.fabIcon}
+                            />
+                        </TouchableOpacity>
                     </View>
                 </View>
             </TouchableWithoutFeedback>
