@@ -149,7 +149,7 @@ const MyInvoices = () => {
                                     style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}  
                                 />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => {navigation.navigate('Settings')}}>
+                            <TouchableOpacity onPress={() => {navigation.navigate('settings')}}>
                                 <Image
                                     source={require('../../assets/settings.png')}
                                     style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]}

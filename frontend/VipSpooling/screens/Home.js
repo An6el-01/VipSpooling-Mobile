@@ -101,31 +101,6 @@ const styles = StyleSheet.create({
     height: 30,
     tintColor: '#000',
   },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#fff',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  bottomNavItem: {
-    alignItems: 'center',
-  },
-  bottomNavIcon: {
-    width: 24,
-    height: 24,
-    marginBottom: 5,
-  },
-  bottomNavText: {
-    fontSize: 12,
-    color: '#000',
-  },
 });
 
 const Dashboard = () => {
