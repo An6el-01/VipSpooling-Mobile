@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../../store/themeSlice';
 import Card from '../../components/Card';
+import CustomBottomTab from '../../components/CustomBottomTab';
 
 const styles = StyleSheet.create({
     background: {
@@ -149,7 +150,7 @@ const MyInvoices = () => {
                                     style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}  
                                 />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => {navigation.navigate('settings')}}>
+                            <TouchableOpacity onPress={() => {navigation.navigate('Settings')}}>
                                 <Image
                                     source={require('../../assets/settings.png')}
                                     style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]}
@@ -215,6 +216,7 @@ const MyInvoices = () => {
                     </View>
                 </View>
             </TouchableWithoutFeedback>
+            <CustomBottomTab/>
         </ImageBackground>
     );
 };

@@ -114,7 +114,7 @@ const SignIn = () => {
                         >
                             <Image
                                 source={require('../../assets/arrowBack.png')}
-                                style={styles.goBackIcon}
+                                style={[styles.goBackIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]}
                             />
                             <Text style={[styles.goBackText, { color: isDarkMode ? '#fff' : '#000' }]}>
                                 Go Back
@@ -137,35 +137,35 @@ const SignIn = () => {
                         <Card isDarkMode={isDarkMode}>
                             <View style={styles.cardContainerContent}>
                                 {/* EMAIL INPUT FIELD */}
-                                <View style={styles.inputField}>
+                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <Image
                                         source={require('../../assets/mail.png')}
-                                        style={styles.inputIcon}
+                                        style={[styles.inputIcon, {tintColor: isDarkMode ? '#000' : '#fff'}]}
                                     />
                                     <TextInput
                                         placeholder="Email Address"
-                                        placeholderTextColor="#aaa"
+                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
                                         keyboardType="email-address"
                                         autoCapitalize="none"
                                     />
                                 </View>
                                 {/* PASSWORD INPUT FIELD */}
-                                <View style={styles.inputField}>
+                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <Image
                                         source={require('../../assets/padlock.png')}
-                                        style={styles.inputIcon}
+                                        style={[styles.inputIcon, {tintColor: isDarkMode ? '#000' : '#fff'}]}
                                     />
                                     <TextInput
                                         placeholder="Password"
-                                        placeholderTextColor="#aaa"
+                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
                                         secureTextEntry={true}
                                     />
                                 </View>
 
                                 {/* SIGN-IN BUTTON */}
-                                <TouchableOpacity style={styles.signInButton} onPress={navigation.navigate('Home')}>
+                                <TouchableOpacity style={styles.signInButton} onPress={() => navigation.navigate('Home')}>
                                     <Text style={[styles.signInButtonText, { color: isDarkMode ? '#000' : '#000' }]}>
                                         Sign In
                                     </Text>

@@ -96,7 +96,6 @@ const styles = StyleSheet.create({
     },
     termsText: {
         fontSize: 12,
-        color: '#000',
     },
     linkText: {
         fontSize: 12,
@@ -142,7 +141,7 @@ const SetUp = () => {
                         >
                             <Image
                                 source={require('../../assets/arrowBack.png')}
-                                style={styles.goBackIcon}
+                                style={[styles.goBackIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
                             />
                             <Text style={[styles.goBackText, { color: isDarkMode ? '#fff' : '#000' }]}>
                                 Go Back
@@ -165,36 +164,36 @@ const SetUp = () => {
                         <Card isDarkMode={isDarkMode}>
                             <View style={styles.cardContainerContent}>
                                 {/*EMAIL INPUT FIELD*/}
-                                <View style={styles.inputField}>
+                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <TextInput
                                         placeholder= "Full Name"
-                                        placeholderTextColor="#aaa"
+                                        placeholderTextColor= {isDarkMode ? "#5e5e5e" : '#aaa'}
                                         style={styles.inputText}
                                         keyboardType='ascii-capable'
                                         autoCapitalize='none'
                                     />
                                 </View>
-                                <View style={styles.inputField}>
+                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <TextInput
                                         placeholder= "Email Address"
-                                        placeholderTextColor="#aaa"
+                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
                                         keyboardType='email-address'
                                         autoCapitalize='none'
                                     />
                                 </View>
-                                <View style={styles.inputField}>
+                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <TextInput
                                         placeholder= "Password"
-                                        placeholderTextColor="#aaa"
+                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
                                         secureTextEntry={true}
                                     />
                                 </View>
-                                <View style={styles.inputField}>
+                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <TextInput
                                         placeholder= "Confirm Password"
-                                        placeholderTextColor="#aaa"
+                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
                                         secureTextEntry={true}
                                     />
@@ -209,7 +208,7 @@ const SetUp = () => {
                                         ]}>
                                         {isAgreed && <Text style={styles.checkbocTick}>✅</Text>}
                                     </TouchableOpacity>
-                                    <Text style={styles.termsText}>
+                                    <Text style={[styles.termsText, {color: isDarkMode ? '#fff' : '#000' }]}>
                                         By signing up you are agreeing to our{' '}
                                         <Text
                                             style={styles.linkText}
@@ -228,7 +227,7 @@ const SetUp = () => {
                                     - ONLY ACCSSIBLE IF: TERMS AND CONDITIOND AND PRIVACY POLICY IS AGREED WITH
                                 */}
                                 <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('Home')}>
-                                    <Text style={[styles.continueButtonText, { color: isDarkMode ? '#000' : '#000' }]}>
+                                    <Text style={styles.continueButtonText}>
                                         Continue
                                     </Text>
                                 </TouchableOpacity>

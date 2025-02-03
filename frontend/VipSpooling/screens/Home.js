@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../store/themeSlice';
 import Card from '../components/Card';
 import { useNavigation } from '@react-navigation/native';
+import CustomBottomTab from '../components/CustomBottomTab';
 
 const styles = StyleSheet.create({
   background: {
@@ -193,6 +194,7 @@ const Dashboard = () => {
           
         </View>
       </View>
+      <CustomBottomTab/>
     </ImageBackground>
   );
 };
