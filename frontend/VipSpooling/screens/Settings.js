@@ -163,7 +163,7 @@ const Settings = () => {
                 {/* PROFILE SECTION */}
                 <View style={styles.profileContainer}>
                     <View style={styles.profileCircle}>
-                        <Image source={require('../assets/manager.png')} style={styles.profileIcon} />
+                        <Image source={require('../assets/manager.png')} style={[styles.profileIcon, {borderColor: isDarkMode ? '#fff' : '#000'}]} />
                     </View>
                     <TouchableOpacity style={styles.editProfileButton}>
                         <Text style={styles.editProfileText}>Edit Profile</Text>
@@ -182,17 +182,17 @@ const Settings = () => {
                     </View>
                     <View style={styles.row}>
                         <View style={styles.labelContainer}>
-                            <Image source={require('../assets/id.png')} style={styles.cardIcon} />
-                            <Text style={styles.label}>Name:</Text>
+                            <Image source={require('../assets/id.png')} style={[styles.cardIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]} />
+                            <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Name:</Text>
                         </View>
-                        <Text style={styles.value}>Toby Green</Text>
+                        <Text style={[styles.value, {color: isDarkMode ? '#fff' :'#000'}]}>Toby Green</Text>
                     </View>
                     <View style={styles.lastRow}>
                         <View style={styles.labelContainer}>
-                            <Image source={require('../assets/mail2.png')} style={styles.cardIcon} />
-                            <Text style={styles.label}>Email:</Text>
+                            <Image source={require('../assets/mail2.png')} style={[styles.cardIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} />
+                            <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Email:</Text>
                         </View>
-                        <Text style={styles.value}>toby.green@vipspooling.com</Text>
+                        <Text style={[styles.value, {color: isDarkMode ? '#fff' : '#000'}]}>toby.green@vipspooling.com</Text>
                     </View>
                 </Card>
 
@@ -200,15 +200,15 @@ const Settings = () => {
                 <Card isDarkMode={isDarkMode} style={styles.card}>
                     <TouchableOpacity style={styles.row}>
                         <View style={styles.labelContainer}>
-                            <Image source={require('../assets/support.png')} style={styles.cardIcon} />
-                            <Text style={styles.label}>Support</Text>
+                            <Image source={require('../assets/support.png')} style={[styles.cardIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} />
+                            <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Support</Text>
                         </View>
                         <Image source={require('../assets/right-arrow.png')} style={[styles.logoutIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]} />
                     </TouchableOpacity>
                     <View style={styles.row}>
                         <View style={styles.labelContainer}>
-                            <Image source={require('../assets/notifications.png')} style={styles.cardIcon} />
-                            <Text style={styles.label}>Push Notifications</Text>
+                            <Image source={require('../assets/notifications.png')} style={[styles.cardIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} />
+                            <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Push Notifications</Text>
                         </View>
                         <Switch
                             value={pushNotifications}
