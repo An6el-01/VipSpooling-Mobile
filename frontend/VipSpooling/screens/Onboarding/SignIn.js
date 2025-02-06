@@ -87,7 +87,6 @@ const styles = StyleSheet.create({
     },
     goBackText: {
         fontSize: 16,
-        color: '#000',
         fontWeight: '600',
     },
 });

@@ -35,7 +35,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize:30,
         fontWeight: '700',
-        color: '#000',
         marginBottom: 20,
         top: 40,
     },
@@ -205,8 +204,8 @@ const MyInvoices = () => {
                         </Card>
                         {/*FLOATING ADD BUTTON*/}
                         <TouchableOpacity
+                            onPress={() => (navigation.navigate('MyTemplates'))}
                             style={styles.fab}
-                            //ADD ON Press
                         >
                             <Image
                                 source={require('../../assets/plus.png')}
