@@ -219,7 +219,7 @@ const Settings = () => {
                             style={{ transform: [{ scaleX: 0.7}, {scaleY: 0.7}], left: 12}}
                         />
                     </View>
-                    <TouchableOpacity style={styles.lastRow}>
+                    <TouchableOpacity style={styles.lastRow} onPress={() => (navigation.navigate('Welcome'))}>
                         <View style={styles.labelContainer}>
                             <Image source={require('../assets/logout.png')} style={styles.logoutIcon} />
                             <Text style={styles.logoutText}>Logout</Text>

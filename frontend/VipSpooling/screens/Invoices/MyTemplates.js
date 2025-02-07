@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Image } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation} from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../../store/themeSlice';
 import Card from '../../components/Card';
@@ -92,7 +92,6 @@ const styles = StyleSheet.create({
 
 const MyTemplates = () => {
     const navigation = useNavigation();
-    const route = useRoute();
     const isDarkMode = useSelector((state) =>  state.theme.isDarkMode);
     const dispatch = useDispatch(); 
 

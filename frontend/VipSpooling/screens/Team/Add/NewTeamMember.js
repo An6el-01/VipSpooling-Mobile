@@ -244,40 +244,41 @@ const NewTeamMember = () => {
                                             autoCapitalize='none'
                                         />
                                     </View>
-                                    {/**TEMPLATE DROPDOWN*/}
-                                    <Text style={styles.fieldText}>Select Templates</Text>
-                                    <Menu
-                                        visible={templateDropdownVisible}
-                                        onDismiss={() => {}}
-                                        anchor={
-                                            <TouchableOpacity
-                                                style={styles.dropdownButton}
-                                                onPress={() => setTemplateDropdownVisible(!templateDropdownVisible)}
-                                            >
-                                                <Text style={[{ color: isDarkMode ? '#5e5e5e' : '#aaa' }]}>
-                                                    {selectedTemplates.length > 0 ? selectedTemplates.join(', ') : 'Select Templates'}
-                                                </Text>
-                                                <Image
-                                                    source={require('../../../assets/down-arrow.png')}
-                                                    style={styles.dropdownArrow}
-                                                />
-                                            </TouchableOpacity>
-                                        }
-                                    >
-                                        {templates.map((template, index) => (
-                                            <TouchableOpacity key={index} onPress={() => toggleTemplateSelection(template)}>
-                                                <View style={[styles.menuItem, selectedTemplates.includes(template) && { backgroundColor: '#ddd' }]}> 
-                                                    <Text style={styles.menuItemText}>
-                                                        {selectedTemplates.includes(template) ? '✔ ' : ''}{template}
+                                  {/**TEMPLATE DROPDOWN*/}
+                                    <Text style={[styles.fieldText, {color: isDarkMode ? '#fff' : '#000'}]}>Select Templates</Text>  
+                                        <Menu
+                                            visible={templateDropdownVisible}
+                                            onDismiss={() => setTemplateDropdownVisible(false)}
+                                            anchor={
+                                                <TouchableOpacity
+                                                    style={[styles.dropdownButton, { borderColor: isDarkMode ? '#fff' : '#000' }]}
+                                                    onPress={() => setTemplateDropdownVisible(!templateDropdownVisible)}
+                                                >
+                                                    <Text style={[{ color: isDarkMode ? '#5e5e5e' : '#aaa' }]}>
+                                                        {selectedTemplates.length > 0 ? selectedTemplates.join(', ') : 'Select Templates'}
                                                     </Text>
-                                                </View>
-                                                {index !== templates.length - 1 && <Divider style={styles.menuDivider} />}
+                                                    <Image
+                                                        source={require('../../../assets/down-arrow.png')}
+                                                        style={styles.dropdownArrow}
+                                                    />
+                                                </TouchableOpacity>
+                                            }
+                                            contentStyle={{ backgroundColor: isDarkMode ? '#333' : '#fff', borderRadius: 12 }}
+                                        >
+                                            {templates.map((template, index) => (
+                                                <TouchableOpacity key={index} onPress={() => toggleTemplateSelection(template)}>
+                                                    <View style={[styles.menuItem, selectedTemplates.includes(template) && { backgroundColor: '#ddd' }]}> 
+                                                        <Text style={[styles.menuItemText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                            {selectedTemplates.includes(template) ? '✔ ' : ''}{template}
+                                                        </Text>
+                                                    </View>
+                                                    {index !== templates.length - 1 && <Divider style={styles.menuDivider} />}
+                                                </TouchableOpacity>
+                                            ))}
+                                            <TouchableOpacity onPress={() => setTemplateDropdownVisible(false)} style={styles.closeMenuButton}>
+                                                <Text style={[styles.closeMenuText, { color: '#000'}]}>Done</Text>
                                             </TouchableOpacity>
-                                        ))}
-                                        <TouchableOpacity onPress={() => setTemplateDropdownVisible(false)} style={styles.closeMenuButton}>
-                                            <Text style={styles.closeMenuText}>Done</Text>
-                                        </TouchableOpacity>
-                                    </Menu>
+                                        </Menu>
                                     {/**ROLE DROPDOWN*/}
                                     <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Assign Role</Text>
                                     <Menu

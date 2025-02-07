@@ -201,7 +201,7 @@ const MyTeam = () => {
                         {/*FLOATING ADD BUTTON*/}
                         <TouchableOpacity
                             style={styles.fab}
-                            //onPress={() => navigation.navigate('NewTeamMember')}
+                            onPress={() => navigation.navigate('NewTeamMember')}
                         >
                             <Image
                                 source={require('../../assets/plus.png')}
