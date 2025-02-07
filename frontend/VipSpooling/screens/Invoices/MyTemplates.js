@@ -137,7 +137,7 @@ const MyTemplates = () => {
                 </View>  
                </View>
                {/**CARD SECTION*/}
-               <Card isDarkMode={isDarkMode} style={{ height: 550, justifyContent: 'center'}}>
+               <Card isDarkMode={isDarkMode} style={{ height: 550, justifyContent: 'center', backgroundColor: '#d5cfcf', borderColor: '#000'}}>
                 <View style={styles.cardContent}>
                     <View style={{flexDirection: 'row'}}>
                         <TouchableOpacity style={styles.form}>
@@ -145,14 +145,14 @@ const MyTemplates = () => {
                                 source={require('../../assets/AutomaticInvoiceForm.jpg')}
                                 style={styles.cardImage}
                             />
-                            <Text style={[styles.formLabelText, {color: isDarkMode ? '#fff' : '#000'}]}> Automatic Invoice Form</Text>
+                            <Text style={styles.formLabelText}> Automatic Invoice Form</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.form}>
                             <Image
                                 source={require('../../assets/JSAForm.jpg')}
                                 style={styles.cardImage}
                             />
-                            <Text style={[styles.formLabelText, {color: isDarkMode ? '#fff' : '#000'}]}>JSA Form</Text>
+                            <Text style={styles.formLabelText}>JSA Form</Text>
                         </TouchableOpacity>
                         
                     </View>
