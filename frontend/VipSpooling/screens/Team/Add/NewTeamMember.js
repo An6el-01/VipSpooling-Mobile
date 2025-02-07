@@ -1,12 +1,12 @@
-// Bugs on the dropdown more specifically the templates dropdown.
-
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, FlatList, Animated } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../../../store/themeSlice';
 import Card from '../../../components/Card';
-import { Provider as PaperProvider, Menu, Divider } from 'react-native-paper';
+import { Dropdown, MultiSelect, dropdwon } from 'react-native-element-dropdown';
+import { isDraft } from '@reduxjs/toolkit';
+
 
 const styles = StyleSheet.create({
     background: {
@@ -17,6 +17,9 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         padding: 20,
+    },
+    scrollContainer: {
+        flexGrow: 1,
     },
     header: {
         flexDirection: 'row',
@@ -38,7 +41,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 30,
         fontWeight: '700',
-        top: 50,
+        top: 30,
     },
     goBackButton: {
         position: 'absolute',
@@ -79,25 +82,57 @@ const styles = StyleSheet.create({
         backgroundColor: '#EAE7E7',
     },
     inputText: {
-        color: '#fff',
+        color: '#000',
         fontSize: 16,
         flex: 1,
     },
-    dropdownButton: {
+    dropdownContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
         borderRadius: 12,
         paddingVertical: 14,
         paddingHorizontal: 15,
         marginBottom: 22,
-        width: '100%',
+        width: '115%',
         borderWidth: 1.3,
         backgroundColor: '#EAE7E7',
     },
-    dropdownArrow: {
-        width: 20,
-        height: 20,
+    dropdownStyle: {
+        flex: 1,
+        backgroundColor: '#EAE7E7',
+        borderRadius: 8,
+    },
+    placeholderText: {
+        fontSize: 16,
+        color: '#5e5e5e',
+    },
+    selectedTextStyle: {
+        fontSize: 16,
+        color: '#000',
+    },
+    tagContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: 5,
+    },
+    tag: {
+        backgroundColor: '#FFD700',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
+        marginRight: 8,
+        marginBottom: 8,
+        flexDirection: 'row'
+    },
+    tagText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#000',
+    },
+    removeTag: {
+        marginLeft: 8,
+        color: 'red',
+        fontWeight: 'bold',
     },
     inviteButton: {
         left: 32,
@@ -156,181 +191,164 @@ const NewTeamMember = () => {
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
     const dispatch = useDispatch();
 
-    const [templateDropdownVisible, setTemplateDropdownVisible] = useState(false);
-    const [roleDropdownVisible, setRoleDropdownVisible] = useState(false);
     const [selectedTemplates, setSelectedTemplates] = useState([]);
     const [selectedRole, setSelectedRole] = useState(null);
 
-    const templates = ['Automatic Invoice Form', 'JSA Form'];
-    const roles = ['Team Member', 'Admin'];
+    const templates = [
+        { label: 'Automatic Invoice Form', value: 'invoice' },
+        { label: 'JSA Form', value: 'jsa' },
+    ];
+
+    const roles = [
+        { label: 'Admin', value: 'admin' },
+        { label: 'Team Member', value: 'teamMember' },
+    ]
 
     const backgroundImage = isDarkMode
         ? require('../../../assets/DarkMode.jpg')
         : require('../../../assets/LightMode.jpg')
 
-    const toggleTemplateSelection = (template) => {
-        setSelectedTemplates((prev) => {
-            if (prev.includes(template)) {
-                return prev.filter((t) => t !== template);
-            } else {
-                return [...prev, template];
-            }
-        });
-    }
+        const removeTemplate = (value) => {
+            setSelectedTemplates(selectedTemplates.filter(item => item !== value));
+        };
 
     return (
-        <PaperProvider>
-            <ImageBackground source={backgroundImage} style={styles.background}>
-                <KeyboardAvoidingView style={styles.container} behavior="padding">
+        <ImageBackground source={backgroundImage} style={styles.background}>
+            <KeyboardAvoidingView style={{ flex: 1}} behavior="padding">
+                <ScrollView
+                    contentContainerStyle={{ flexGrow: 1}}
+                    keyboardShouldPersistTaps="handled"
+                    bounces={false}
+                >
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                        <View style={styles.container}>
-                            {/**HEADER SECTION*/}
-                            <View style={styles.header}>
-                                <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                    New Team Member
+                    <View style={styles.container}>
+                        {/**HEADER SECTION*/}
+                        <View style={styles.header}>
+                            <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                New Team Member
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.goBackButton}
+                                onPress={() => (navigation.goBack())}
+                            >
+                                <Image
+                                    source={require('../../../assets/arrowBack.png')}
+                                    style={[styles.goBackIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]}
+                                />
+                                <Text style={[styles.goBackText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                    Go Back
                                 </Text>
-                                <TouchableOpacity
-                                    style={styles.goBackButton}
-                                    onPress={() => (navigation.goBack())}
-                                >
+                            </TouchableOpacity>
+                            <View style={styles.headerIcons}>
+                                <TouchableOpacity onPress={() => dispatch(toggleTheme())}>
                                     <Image
-                                        source={require('../../../assets/arrowBack.png')}
-                                        style={[styles.goBackIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]}
-                                    />
-                                    <Text style={[styles.goBackText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                        Go Back
-                                    </Text>
-                                </TouchableOpacity>
-                                <View style={styles.headerIcons}>
-                                    <TouchableOpacity onPress={() => dispatch(toggleTheme())}>
-                                        <Image
-                                            source={isDarkMode
-                                                ? require('../../../assets/sun.png')
-                                                : require('../../../assets/moon.png')
-                                            }
-                                            style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]}
-                                        />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => { navigation.navigate('Settings') }}>
-                                        <Image
-                                            source={require('../../../assets/settings.png')}
-                                            style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                            {/**FORM SECTION*/}
-                            <Card isDarkMode={isDarkMode}>
-                                <View style={styles.cardContainerContent}>
-                                    {/**Name Input Field*/}
-                                    <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Name</Text>
-                                    <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                                        <TextInput
-                                            placeholder='Full Name'
-                                            placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
-                                            style={styles.inputText}
-                                            keyboardType="ascii-capable"
-                                            autoCapitalize='none'
-                                        />
-                                    </View>
-                                    {/**EMAIL INPUT FIELD*/}
-                                    <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>User's Email</Text>
-                                    <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                                        <TextInput
-                                            placeholder="Email Address"
-                                            placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
-                                            style={styles.inputText}
-                                            keyboardType='email-address'
-                                            autoCapitalize='none'
-                                        />
-                                    </View>
-                                  {/**TEMPLATE DROPDOWN*/}
-                                    <Text style={[styles.fieldText, {color: isDarkMode ? '#fff' : '#000'}]}>Select Templates</Text>  
-                                        <Menu
-                                            visible={templateDropdownVisible}
-                                            onDismiss={() => setTemplateDropdownVisible(false)}
-                                            anchor={
-                                                <TouchableOpacity
-                                                    style={[styles.dropdownButton, { borderColor: isDarkMode ? '#fff' : '#000' }]}
-                                                    onPress={() => setTemplateDropdownVisible(!templateDropdownVisible)}
-                                                >
-                                                    <Text style={[{ color: isDarkMode ? '#5e5e5e' : '#aaa' }]}>
-                                                        {selectedTemplates.length > 0 ? selectedTemplates.join(', ') : 'Select Templates'}
-                                                    </Text>
-                                                    <Image
-                                                        source={require('../../../assets/down-arrow.png')}
-                                                        style={styles.dropdownArrow}
-                                                    />
-                                                </TouchableOpacity>
-                                            }
-                                            contentStyle={{ backgroundColor: isDarkMode ? '#333' : '#fff', borderRadius: 12 }}
-                                        >
-                                            {templates.map((template, index) => (
-                                                <TouchableOpacity key={index} onPress={() => toggleTemplateSelection(template)}>
-                                                    <View style={[styles.menuItem, selectedTemplates.includes(template) && { backgroundColor: '#ddd' }]}> 
-                                                        <Text style={[styles.menuItemText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                                            {selectedTemplates.includes(template) ? '✔ ' : ''}{template}
-                                                        </Text>
-                                                    </View>
-                                                    {index !== templates.length - 1 && <Divider style={styles.menuDivider} />}
-                                                </TouchableOpacity>
-                                            ))}
-                                            <TouchableOpacity onPress={() => setTemplateDropdownVisible(false)} style={styles.closeMenuButton}>
-                                                <Text style={[styles.closeMenuText, { color: '#000'}]}>Done</Text>
-                                            </TouchableOpacity>
-                                        </Menu>
-                                    {/**ROLE DROPDOWN*/}
-                                    <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Assign Role</Text>
-                                    <Menu
-                                        visible={roleDropdownVisible}
-                                        onDismiss={() => setRoleDropdownVisible(false)}
-                                        anchor={
-                                            <TouchableOpacity
-                                                style={[styles.dropdownButton, { borderColor: isDarkMode ? '#fff' : '#000' }]}
-                                                onPress={() => setRoleDropdownVisible(true)}
-                                            >
-                                                <Text style={[{ color: isDarkMode ? '#5e5e5e' : '#aaa' }]}>
-                                                    {selectedRole ? selectedRole : 'Select Role'}
-                                                </Text>
-                                                <Image
-                                                    source={require('../../../assets/down-arrow.png')}
-                                                    style={styles.dropdownArrow}
-                                                />
-                                            </TouchableOpacity>
+                                        source={isDarkMode
+                                            ? require('../../../assets/sun.png')
+                                            : require('../../../assets/moon.png')
                                         }
-                                        contentStyle={{ backgroundColor: isDarkMode ? '#333' : '#fff', borderRadius: 12 }}
-                                    >
-                                        {roles.map((role, index) => (
-                                            <React.Fragment key={index}>
-                                                <Menu.Item
-                                                    onPress={() => {
-                                                        setSelectedRole(role);
-                                                        setRoleDropdownVisible(false);
-                                                    }}
-                                                    title={role}
-                                                    titleStyle={[styles.menuItemText, { color: isDarkMode ? '#fff' : '#000' }]}
-                                                    style={styles.menuItem}
-                                                />
-                                                {index < roles.length - 1 && <Divider style={styles.menuDivider} />}
-                                            </React.Fragment>
-                                        ))}
-                                    </Menu>
-                                    <TouchableOpacity style={styles.inviteButton}>
-                                        <Text style={styles.inviteButtonText}>
-                                            Send Invitation Code
-                                        </Text>
-                                        <Image
-                                            source={require('../../../assets/right-arrow.png')}
-                                            style={styles.buttonArrow}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </Card>
+                                        style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]}
+                                    />
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => { navigation.navigate('Settings') }}>
+                                    <Image
+                                        source={require('../../../assets/settings.png')}
+                                        style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]}
+                                    />
+                                </TouchableOpacity>
+                            </View>
                         </View>
+                        {/**FORM SECTION*/}
+                        <Card isDarkMode={isDarkMode}>
+                            <View style={styles.cardContainerContent}>
+                                {/**Name Input Field*/}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Name</Text>
+                                <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                                    <TextInput
+                                        placeholder='Full Name'
+                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
+                                        style={styles.inputText}
+                                        keyboardType="ascii-capable"
+                                        autoCapitalize='none'
+                                    />
+                                </View>
+                                {/**EMAIL INPUT FIELD*/}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>User's Email</Text>
+                                <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                                    <TextInput
+                                        placeholder="Email Address"
+                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
+                                        style={styles.inputText}
+                                        keyboardType='email-address'
+                                        autoCapitalize='none'
+                                    />
+                                </View>
+                                {/** Templates Dropdown */}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Select Templates</Text>
+                                <View style={[styles.dropdownContainer, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                                <MultiSelect
+                                        data={templates}
+                                        labelField="label"
+                                        valueField="value"
+                                        value={selectedTemplates}
+                                        onChange={setSelectedTemplates}
+                                        search={false}
+                                        style={styles.dropdownStyle}
+                                        placeholder={selectedTemplates.length === 0 ? 'Select Templates' : `${selectedTemplates.length} selected`}
+                                        placeholderStyle={styles.placeholderText}
+                                        selectedTextStyle={{ display: 'none' }}
+                                    />
+                                </View>
+
+                                {selectedTemplates.length > 0 && (
+                                    <View style={styles.tagContainer}>
+                                        {templates.filter(template => selectedTemplates.includes(template.value))
+                                            .map((template) => (
+                                                <View key={template.value} style={styles.tag}>
+                                                    <Text style={styles.tagText}>{template.label}</Text>
+                                                    <TouchableOpacity onPress={() => removeTemplate(template.value)}>
+                                                        <Text style={styles.removeTag}>❌</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))
+                                        }
+                                    </View>
+                                )}
+                                
+
+                                {/** Role Dropdown */}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Assign Role</Text>
+                                <View style={[styles.dropdownContainer, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                                    <Dropdown
+                                        data={roles}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder='Select Role'
+                                        value={selectedRole}
+                                        onChange={item => setSelectedRole(item.value)}
+                                        search={false}
+                                        style={styles.dropdownStyle}
+                                        placeholderStyle={[styles.placeholderText, {color: isDarkMode ? '#5e5e5e' : '#aaa'}]}
+                                        selectedTextStyle={styles.selectedTextStyle}
+                                    />
+                                </View>
+                                {/**BUTTON SECTION*/}
+                                <TouchableOpacity style={styles.inviteButton}>
+                                    <Text style={styles.inviteButtonText}>
+                                        Send Invitation Code
+                                    </Text>
+                                    <Image
+                                        source={require('../../../assets/right-arrow.png')}
+                                        style={styles.buttonArrow}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        </Card>
+                    </View>
                     </TouchableWithoutFeedback>
-                </KeyboardAvoidingView>
-            </ImageBackground>
-        </PaperProvider>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </ImageBackground>
+
     );
 };
 
