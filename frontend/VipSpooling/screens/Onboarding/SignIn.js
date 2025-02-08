@@ -17,18 +17,17 @@ const styles = StyleSheet.create({
     },
     cardContainerContent: {
         justifyContent: 'center',
-        alignItems: 'center',
     },
     logoImage: {
         position: 'relative',
-        bottom: 125,
+        bottom: 100,
         width: 120,
         height: 100,
         marginBottom: 20,
     },
     title: {
         position: 'relative',
-        bottom: 20,
+        bottom: 10,
         fontSize: 25,
         fontWeight: '700',
         marginBottom: 20,
@@ -41,19 +40,27 @@ const styles = StyleSheet.create({
     inputField: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#000',
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 15,
+        backgroundColor: '#EAE7E7',
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        paddingVertical: 14,
+        marginBottom: 22,
+        width:'100%',
+    },
+    fieldText: {
+        position: 'relative',
         marginBottom: 15,
+        fontSize: 16,
+        fontWeight: '600',
     },
     inputIcon: {
         width: 30,
         height: 30,
         marginRight: 20,
+        tintColor: '#000',
     },
     inputText: {
-        color: '#fff',
+        color: '#000',
         fontSize: 16,
         flex: 1,
     },
@@ -72,10 +79,11 @@ const styles = StyleSheet.create({
         color: '#000',
         fontWeight: '600',
         fontSize: 16,
+        textAlign: 'center',
     },
     goBackButton: {
         position: 'absolute',
-        top: 30, // Distance from the top
+        top: 35, // Distance from the top
         left: 2, // Distance from the left
         flexDirection: 'column', // Align icon and text horizontally
         alignItems: 'center',
@@ -136,10 +144,11 @@ const SignIn = () => {
                         <Card isDarkMode={isDarkMode}>
                             <View style={styles.cardContainerContent}>
                                 {/* EMAIL INPUT FIELD */}
-                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>Email</Text>
+                                <View style={[styles.inputField, {borderColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <Image
                                         source={require('../../assets/mail.png')}
-                                        style={[styles.inputIcon, {tintColor: isDarkMode ? '#000' : '#fff'}]}
+                                        style={styles.inputIcon}
                                     />
                                     <TextInput
                                         placeholder="Email Address"
@@ -150,10 +159,11 @@ const SignIn = () => {
                                     />
                                 </View>
                                 {/* PASSWORD INPUT FIELD */}
-                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>Password</Text>
+                                <View style={[styles.inputField, {borderColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <Image
                                         source={require('../../assets/padlock.png')}
-                                        style={[styles.inputIcon, {tintColor: isDarkMode ? '#000' : '#fff'}]}
+                                        style={styles.inputIcon}
                                     />
                                     <TextInput
                                         placeholder="Password"

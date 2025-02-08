@@ -1,12 +1,12 @@
-import React, {useState} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ImageBackground, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ImageBackground, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Card from '../../components/Card';
 import { useSelector } from 'react-redux';
 
 const styles = StyleSheet.create({
-    background: {
-        flex:1,
+    background:{
+        flex: 1,
         resizeMode: 'cover',
     },
     container: {
@@ -16,19 +16,18 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     cardContainerContent: {
-        justifyContent:'center',
-        alignItems:'center',
+        justifyContent: 'center',
     },
     logoImage: {
-        position:'relative',
-        bottom: 70,
+        position: 'relative',
+        bottom: 20,
         width: 120,
         height: 100,
         marginBottom: 20,
     },
     title: {
         position: 'relative',
-        bottom: 20,
+        bottom: 10,
         fontSize: 25,
         fontWeight: '700',
         marginBottom: 20,
@@ -41,14 +40,27 @@ const styles = StyleSheet.create({
     inputField: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#000',
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 15,
+        backgroundColor: '#EAE7E7',
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        paddingVertical: 14,
+        marginBottom: 22,
+        width:'100%',
+    },
+    fieldText: {
+        position: 'relative',
         marginBottom: 15,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    inputIcon: {
+        width: 30,
+        height: 30,
+        marginRight: 20,
+        tintColor: '#000',
     },
     inputText: {
-        color: '#fff',
+        color: '#000',
         fontSize: 16,
         flex: 1,
     },
@@ -67,72 +79,40 @@ const styles = StyleSheet.create({
         color: '#000',
         fontWeight: '600',
         fontSize: 16,
-    },
-    disabledButton: {
-        backgroundColor: '#838383'
+        textAlign: 'center',
     },
     goBackButton: {
         position: 'absolute',
-        top: 30,
-        left: 2,
-        flexDirection: 'column',
+        top: 35, // Distance from the top
+        left: 2, // Distance from the left
+        flexDirection: 'column', // Align icon and text horizontally
         alignItems: 'center',
     },
     goBackIcon: {
-        width: 24,
+        width: 24, // Adjusted size
         height: 24,
-        marginRight: 5,
+        marginRight: 5, // Space between icon and text
     },
     goBackText: {
         fontSize: 16,
-        color: '#000',
         fontWeight: '600',
-    },
-    termsContainer: {
-        flexDirection: 'row',
-        alignItems:'center',
-        justifyContent:'center',
-        marginTop: 10,
-    },
-    termsText: {
-        fontSize: 12,
-    },
-    linkText: {
-        fontSize: 12,
-        color: '#003BFF',
-        textDecorationLine: 'underline',
-    },
-    checkbox: {
-        width: 24,
-        height: 24,
-        borderRadius: 5,
-        borderWidth: 2,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 3,
-    },
-    checkboxTick: {
-        color: '#000',
-        fontSize: 16,
-        fontWeight:'bold',
     },
 });
 
 const SetUp = () => {
     const navigation = useNavigation();
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
-    const [isAgreed, setIsAgreed] = useState(false);
 
     const backgroundImage = isDarkMode
     ? require('../../assets/DarkMode.jpg')
     : require('../../assets/LightMode.jpg')
 
-    return(
+    return (
         <ImageBackground source={backgroundImage} style={styles.background}>
-            <KeyboardAvoidingView style={styles.container} behavior='padding'>
+            <KeyboardAvoidingView style= {styles.container} behavior='padding'>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={styles.container}>
-                        {/*GO BACK BUTTON*/}
+                        {/* Go Back Button */}
                         <TouchableOpacity
                             style={styles.goBackButton}
                             onPress={() => {
@@ -141,95 +121,79 @@ const SetUp = () => {
                         >
                             <Image
                                 source={require('../../assets/arrowBack.png')}
-                                style={[styles.goBackIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
+                                style={[styles.goBackIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]}
                             />
                             <Text style={[styles.goBackText, { color: isDarkMode ? '#fff' : '#000' }]}>
                                 Go Back
                             </Text>
                         </TouchableOpacity>
 
-                        {/*LOGO*/}
+                        {/* LOGO */}
                         <Image
                             source={require('../../assets/VipSpoolingLogo.png')}
                             style={styles.logoImage}
                             resizeMode="contain"
                         />
 
-                        {/*TITLE*/}
+                        {/* TITLE */}
                         <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000' }]}>
                             Set up your profile. ✍️
+
                         </Text>
 
-                        {/*CARD COMPONENT*/}
+                        {/* CARD COMPONENT */}
                         <Card isDarkMode={isDarkMode}>
                             <View style={styles.cardContainerContent}>
-                                {/*EMAIL INPUT FIELD*/}
-                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
-                                    <TextInput
-                                        placeholder= "Full Name"
-                                        placeholderTextColor= {isDarkMode ? "#5e5e5e" : '#aaa'}
+                                {/*NAME INPUT FIELD*/}
+                                 <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Name</Text>
+                                 <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                                     <TextInput
+                                        placeholder="Full Name"
+                                        placeholderTextColor={isDarkMode ? "#5e5e5e" : '#aaa'}
                                         style={styles.inputText}
                                         keyboardType='ascii-capable'
                                         autoCapitalize='none'
                                     />
                                 </View>
-                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
+                                {/**EMAIL INPUT FIELD*/}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Email</Text>
+                                <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
                                     <TextInput
-                                        placeholder= "Email Address"
+                                        placeholder="Email Address"
                                         placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
                                         keyboardType='email-address'
                                         autoCapitalize='none'
                                     />
                                 </View>
-                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
+                                {/**PASSWORD INPUT FIELD*/}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Password</Text>
+                                <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
                                     <TextInput
-                                        placeholder= "Password"
+                                        placeholder="Password"
                                         placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
                                         secureTextEntry={true}
                                     />
                                 </View>
-                                <View style={[styles.inputField, {backgroundColor: isDarkMode ? '#fff' : '#000'}]}>
+                                {/**CONFIRM PASSWORD INPUT FIELD*/}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Confirm Password</Text>
+                                <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
                                     <TextInput
-                                        placeholder= "Confirm Password"
+                                        placeholder="Confirm Password"
                                         placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
                                         secureTextEntry={true}
                                     />
                                 </View>
-                                {/*TERMS AND CONDITIONS AND PRIVACY POLICY*/}
-                                <View style={styles.termsContainer}>
-                                    <TouchableOpacity
-                                        onPress={() =>  setIsAgreed(!isAgreed)}
-                                        style={[
-                                            styles.checkbox,
-                                            {backgroundColor: isAgreed ? '#00bb06' : '#fff', borderColor: isAgreed ? '#aaa' : '#aaa'},
-                                        ]}>
-                                        {isAgreed && <Text style={styles.checkbocTick}>✅</Text>}
-                                    </TouchableOpacity>
-                                    <Text style={[styles.termsText, {color: isDarkMode ? '#fff' : '#000' }]}>
-                                        By signing up you are agreeing to our{' '}
-                                        <Text
-                                            style={styles.linkText}
-                                            /*ADD ON PRESS LINK TO TERMS AND CONDITIONS*/>
-                                                Terms & Conditions
-                                        </Text>{' '}
-                                        and{' '}
-                                        <Text
-                                            style={styles.linkText}
-                                            /*ADD ON PRESS LINK TO PRIVACY POLICY*/>
-                                                Privacy Policy
-                                        </Text>
-                                    </Text>
-                                </View>
-                                {/*CONTINUE BUTTON
-                                    - ONLY ACCSSIBLE IF: TERMS AND CONDITIOND AND PRIVACY POLICY IS AGREED WITH
-                                */}
-                                <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('Home')}>
-                                    <Text style={styles.continueButtonText}>
-                                        Continue
-                                    </Text>
+
+                                 {/*CONTINUE BUTTON
+//                                     - ONLY ACCSSIBLE IF: TERMS AND CONDITIOND AND PRIVACY POLICY IS AGREED WITH
+//                                 */}
+                                 <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('Home')}>
+                                     <Text style={styles.continueButtonText}>
+                                         Continue
+                                     </Text>
                                 </TouchableOpacity>
                             </View>
                         </Card>
