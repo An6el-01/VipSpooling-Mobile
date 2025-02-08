@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     headerIcons: {
         flexDirection: 'row',
         alignItems: 'center',
-        top: 20,
+        top: 30,
         marginBottom: 90,
     },
     headerIcon: {
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     },
     goBackButton: {
         position: 'absolute',
-        top: 20,
+        top: 30,
         left: 2,
         flexDirection: 'column',
         alignItems: 'center',
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingVertical: 14,
         marginBottom: 22,
-        width: '115%',
+        width: '100%',
         borderWidth: 1.3,
         backgroundColor: '#EAE7E7',
     },
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         paddingHorizontal: 15,
         marginBottom: 22,
-        width: '115%',
+        width: '100%',
         borderWidth: 1.3,
         backgroundColor: '#EAE7E7',
     },
@@ -134,19 +134,22 @@ const styles = StyleSheet.create({
         color: 'red',
         fontWeight: 'bold',
     },
-    inviteButton: {
-        left: 32,
-        backgroundColor: '#FFD700',
-        paddingVertical: 14,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-        borderWidth: 1.3,
-        flexDirection: 'row',
-        borderColor: '#000',
-        marginTop: 15,
-    },
+   inviteButton: {
+    backgroundColor: '#FFD700',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',  // Centers content horizontally
+    flexDirection: 'row',
+    gap: 10,  // Adds spacing between text and arrow
+    width: '100%',
+    borderWidth: 1.3,
+    borderColor: '#000',
+    marginTop: 15,
+    paddingHorizontal: 32,
+    left: 8,
+},
+
     inviteButtonText: {
         color: '#000',
         fontSize: 16,
@@ -156,33 +159,10 @@ const styles = StyleSheet.create({
         height: 22,
         width: 22,
         marginLeft: 10,
-        marginRight: 12,
     },
     dropdownArrow: {
         height: 24,
         width: 24,
-    },
-    menuItem: {
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-    },
-    menuItemText: {
-        fontSize: 16,
-        color: '#000',
-    },
-    menuDivider: {
-        backgroundColor: '#ccc',
-    },
-    closeMenuButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        alignItems: 'center',
-        backgroundColor: '#ddd',
-    },
-    closeMenuText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#000',
     },
 });
 
