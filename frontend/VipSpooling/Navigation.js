@@ -12,7 +12,7 @@ import Settings from './screens/Settings';
 import MyTemplates from './screens/Invoices/MyTemplates';
 import NewTeamMember from './screens/Team/Add/NewTeamMember';
 import Home from './screens/Home';
-import MyInvoices from './screens/Invoices/MyInvoices';
+import MyForms from './screens/Invoices/MyForms';
 import MyTeam from './screens/Team/MyTeam';
 import Plans from './screens/Plans';
 
@@ -26,7 +26,7 @@ const AppStack = () => {
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SetUp" component={SetUp}/>
       <Stack.Screen name="Home" component={Home}/>
-      <Stack.Screen name="Invoices" component={MyInvoices}/>
+      <Stack.Screen name="Forms" component={MyForms}/>
       <Stack.Screen name="My Team" component={MyTeam}/>
       <Stack.Screen name="Plans" component={Plans}/>
       <Stack.Screen name="Settings" component={Settings}/>

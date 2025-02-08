@@ -48,7 +48,7 @@ const CustomBottomTab = () => {
 
     const tabs =[
         {name: 'Home', icon: require('../assets/home.png')},
-        {name: 'Invoices', icon: require('../assets/invoice.png')},
+        {name: 'Forms', icon: require('../assets/invoice.png')},
         {name: 'My Team', icon: require('../assets/team.png')},
         {name: 'Plans', icon: require('../assets/plansIcon.png')},
     ];

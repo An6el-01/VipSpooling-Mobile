@@ -105,7 +105,7 @@ const MyTemplates = () => {
                {/**HEADER SECTION*/}
                <View style={styles.header}>
                 <Text style={[styles.title, {color: isDarkMode ? '#fff' : '#000'}]}>
-                    My Templates
+                    Select A Template
                 </Text>
                 <TouchableOpacity
                     style={styles.goBackButton}

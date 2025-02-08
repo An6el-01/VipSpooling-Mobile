@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     },
 });
 
-const MyInvoices = () => {
+const MyForms = () => {
     const navigation = useNavigation();
     const isDarkMode = useSelector((state) =>  state.theme.isDarkMode);
     const dispatch =  useDispatch();
@@ -136,7 +136,7 @@ const MyInvoices = () => {
                     {/* Header Section*/}
                     <View style={styles.header}>
                         <Text style={[styles.title, {color: isDarkMode ? '#fff' :'#000' }]}>
-                            My Invoices
+                            My Forms
                         </Text>
                         <View style={styles.headerIcons}>
                             <TouchableOpacity onPress={() => dispatch(toggleTheme())}>
@@ -220,4 +220,4 @@ const MyInvoices = () => {
     );
 };
 
-export default MyInvoices;
+export default MyForms;

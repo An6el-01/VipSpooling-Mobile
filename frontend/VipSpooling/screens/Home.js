@@ -59,12 +59,16 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     marginBottom: 10,
-    left: 30, //Centers The Icon for shortcuts.
   },
   sectionText: {
-    textAlign: 'center',
     fontSize: 12,
     fontWeight: '600',
+  },
+  newFormIcon: {
+    alignItems: 'center',
+  },
+  addNewUser: {
+    alignItems: 'center',
   },
   activitySection: {
     marginTop: 20,
@@ -144,19 +148,19 @@ const Dashboard = () => {
         {/* Add New User & My Templates Section */}
         <Card isDarkMode={isDarkMode} style={{padding: 15, width: '80%', alignSelf: 'center', marginTop: 15}}>
           <View style={styles.sectionButton}>
-            <TouchableOpacity onPress={() => {navigation.navigate('NewTeamMember')}}>
+            <TouchableOpacity style={styles.addNewUser} onPress={() => {navigation.navigate('NewTeamMember')}}>
               <Image
                 source={require('../assets/addUser.png')}
                 style={[styles.sectionIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]}
               />
               <Text style={[styles.sectionText, { color: isDarkMode ? '#fff' : '#000'}]}>Add New User</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => {navigation.navigate('MyTemplates')}}>
+            <TouchableOpacity  style={styles.newFormIcon} onPress={() => {navigation.navigate('MyTemplates')}}>
               <Image
                 source={require('../assets/templates.png')}
                 style={[styles.sectionIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
               />
-              <Text style={[styles.sectionText, { color: isDarkMode ? '#fff' : '#000'}]}>My Templates</Text>
+              <Text style={[styles.sectionText, { color: isDarkMode ? '#fff' : '#000'}]}>New Form</Text>
             </TouchableOpacity>
           </View>
         </Card>
