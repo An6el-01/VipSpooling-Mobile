@@ -193,7 +193,7 @@ const MyForms = () => {
                                     {18 + index}/11/2024 - INV-0000{item}
                                     </Text>
                                 </View>
-                                <TouchableOpacity>
+                                <TouchableOpacity onPress={() => {navigation.navigate('ViewForm')}}>
                                     <Image
                                     source={require('../../assets/view.png')}
                                     style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}

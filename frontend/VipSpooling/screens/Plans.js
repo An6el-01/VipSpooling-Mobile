@@ -35,7 +35,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 30,
         fontWeight: '700',
-        top: 40,
     },
     cardContent:{
         width: '100%',
@@ -111,7 +110,7 @@ const Plans = () => {
                 </View>
             </View>
             {/**CARD SECTION*/}
-            <Card isDarkMode={isDarkMode} style={{ height: 500, justifyContent: 'center', backgroundColor: '#d5cfcf', borderColor: '#000'}}>
+            <Card isDarkMode={isDarkMode} style={{ height: 580, justifyContent: 'center', backgroundColor: '#d5cfcf', borderColor: '#000', bottom: 70}}>
                 <View style={styles.cardContent}>
                     <View style={{flexDirection: 'row'}}>
                         <TouchableOpacity style={styles.plan}>

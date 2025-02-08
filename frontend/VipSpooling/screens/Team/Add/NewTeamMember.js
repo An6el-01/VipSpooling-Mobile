@@ -135,19 +135,23 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
    inviteButton: {
-    backgroundColor: '#FFD700',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',  // Centers content horizontally
-    flexDirection: 'row',
-    gap: 10,  // Adds spacing between text and arrow
-    width: '100%',
-    borderWidth: 1.3,
-    borderColor: '#000',
-    marginTop: 15,
-    paddingHorizontal: 32,
-    left: 8,
+        backgroundColor: '#FFD700',
+        borderRadius: 12,  // Rounded corners
+        borderWidth: 1.3,
+        borderColor: '#000',
+        paddingVertical: 14,  // More padding for a modern look
+        paddingHorizontal: 20,
+        alignItems: 'center',  // Centers text inside the button
+        justifyContent: 'space-evenly',
+        flexDirection: 'row',
+        width: '100%',  // Adjust width to look more balanced
+        alignSelf: 'center',  // Ensures button is centered
+        marginTop: 20,
+        shadowColor: '#000',  // Adds a slight shadow for depth
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3, 
 },
 
     inviteButtonText: {
