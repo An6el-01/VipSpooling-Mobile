@@ -167,7 +167,7 @@ const MyTemplates = () => {
                         
                     </View>
                    
-                    <TouchableOpacity style={styles.requestButton}>
+                    <TouchableOpacity style={styles.requestButton} onPress={() => {navigation.navigate('RequestTemplates')}}>
                         <Text style={styles.requestButtonText}>
                             Request a new template
                         </Text>

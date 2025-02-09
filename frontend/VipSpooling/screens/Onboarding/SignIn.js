@@ -89,15 +89,15 @@ const styles = StyleSheet.create({
     },
     goBackButton: {
         position: 'absolute',
-        top: 35, // Distance from the top
-        left: 2, // Distance from the left
-        flexDirection: 'column', // Align icon and text horizontally
+        top: 35, 
+        left: 2, 
+        flexDirection: 'column', 
         alignItems: 'center',
     },
     goBackIcon: {
-        width: 24, // Adjusted size
+        width: 24, 
         height: 24,
-        marginRight: 5, // Space between icon and text
+        marginRight: 5, 
     },
     goBackText: {
         fontSize: 16,

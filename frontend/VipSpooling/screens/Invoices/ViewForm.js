@@ -60,17 +60,17 @@ const styles = StyleSheet.create({
     },
     editButton:{
         backgroundColor: '#FFD700',
-        borderRadius: 12,  // Rounded corners
+        borderRadius: 12,  
         borderWidth: 1.3,
         borderColor: '#000',
-        paddingVertical: 14,  // More padding for a modern look
+        paddingVertical: 14,  
         paddingHorizontal: 35,
-        alignItems: 'center',  // Centers text inside the button
+        alignItems: 'center',  
         justifyContent: 'center',
-        width: '100%',  // Adjust width to look more balanced
-        alignSelf: 'center',  // Ensures button is centered
+        width: '100%',  
+        alignSelf: 'center',  
         marginTop: 20,
-        shadowColor: '#000',  // Adds a slight shadow for depth
+        shadowColor: '#000',  
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,

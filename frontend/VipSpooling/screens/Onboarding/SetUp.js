@@ -148,7 +148,7 @@ const SetUp = () => {
                         </Text>
 
                         {/* CARD COMPONENT */}
-                        <Card isDarkMode={isDarkMode}>
+                        <Card isDarkMode={isDarkMode} >
                             <View style={styles.cardContainerContent}>
                                 {/*NAME INPUT FIELD*/}
                                  <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Name</Text>
