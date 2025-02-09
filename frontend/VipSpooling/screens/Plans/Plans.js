@@ -2,9 +2,9 @@ import React from 'react';
 import {View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image} from 'react-native';
 import { useNavigation} from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleTheme } from '../store/themeSlice';
-import CustomBottomTab from '../components/CustomBottomTab';
-import Card from '../components/Card';
+import { toggleTheme } from '../../store/themeSlice';
+import CustomBottomTab from '../../components/CustomBottomTab';
+import Card from '../../components/Card';
 
 const styles = StyleSheet.create({
     background: {
@@ -80,8 +80,8 @@ const Plans = () => {
     const dispatch = useDispatch();
 
     const backgroundImage = isDarkMode
-    ? require('../assets/DarkMode.jpg')
-    : require('../assets/LightMode.jpg')
+    ? require('../../assets/DarkMode.jpg')
+    : require('../../assets/LightMode.jpg')
 
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
@@ -95,15 +95,15 @@ const Plans = () => {
                     <TouchableOpacity onPress={() => dispatch(toggleTheme())}>
                         <Image 
                             source={isDarkMode
-                                ? require('../assets/sun.png')
-                                : require('../assets/moon.png')
+                                ? require('../../assets/sun.png')
+                                : require('../../assets/moon.png')
                             }
                             style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
                         />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => {navigation.navigate('Settings')}}>
                             <Image
-                                source={require('../assets/settings.png')}
+                                source={require('../../assets/settings.png')}
                                 style={[styles.headerIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]}
                             />
                     </TouchableOpacity>
@@ -115,18 +115,18 @@ const Plans = () => {
                     <View style={{flexDirection: 'row'}}>
                         <TouchableOpacity style={styles.plan}>
                             <Image
-                                source={require('../assets/PricingTerms2022.jpg')}
+                                source={require('../../assets/PricingTerms2022.jpg')}
                                 style={styles.cardImage}
                             />
                             <Text style={styles.planLabelText}> Pricing Terms 2022</Text>
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.requestButton}>
+                    <TouchableOpacity style={styles.requestButton} onPress={() => {navigation.navigate('RequestPlan')}}>
                         <Text style={styles.requestButtonText}>
                             Request a new pricing plan
                         </Text>
                         <Image
-                            source={require('../assets/right-arrow.png')}
+                            source={require('../../assets/right-arrow.png')}
                             style={styles.buttonArrow}
 
                         />

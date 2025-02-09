@@ -14,9 +14,10 @@ import NewTeamMember from './screens/Team/Add/NewTeamMember';
 import Home from './screens/Home';
 import MyForms from './screens/Invoices/MyForms';
 import MyTeam from './screens/Team/MyTeam';
-import Plans from './screens/Plans';
+import Plans from './screens/Plans/Plans';
 import ViewForm from './screens/Invoices/ViewForm';
 import RequestTemplates from './screens/Invoices/Request/RequestTemplates';
+import RequestPlan from './screens/Plans/RequestPlan';
 
 
 const Stack = createStackNavigator();
@@ -36,6 +37,7 @@ const AppStack = () => {
       <Stack.Screen name="NewTeamMember" component={NewTeamMember}/>
       <Stack.Screen name="ViewForm" component={ViewForm}/>
       <Stack.Screen name="RequestTemplates" component={RequestTemplates}/>
+      <Stack.Screen name="RequestPlan" component={RequestPlan}/>
     </Stack.Navigator>
   );
 };
