@@ -4,7 +4,6 @@ import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../store/themeSlice';
 import Card from '../components/Card';
-import CustomBottomTab from '../components/CustomBottomTab';
 
 const styles = StyleSheet.create({
     background: {

@@ -103,7 +103,7 @@ const ViewForm = () => {
                         </Text>
                         <TouchableOpacity
                                             style={styles.goBackButton}
-                                            onPress={() => {navigation.navigate('Forms')}}
+                                            onPress={() => {navigation.goBack()}}
                                         >
                                             <Image 
                                                 source={require('../../assets/arrowBack.png')} 

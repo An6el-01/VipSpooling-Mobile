@@ -189,7 +189,7 @@ const MyTeam = () => {
                                             Role: {item === 1 ? 'Admin' : 'Team Member'}
                                         </Text>
                                     </View>
-                                    <TouchableOpacity>
+                                    <TouchableOpacity onPress={() => {navigation.navigate('EditTeamMember')}}>
                                         <Image
                                             source={require('../../assets/view.png')}
                                             style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}

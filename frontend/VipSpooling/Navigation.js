@@ -1,8 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-
 
 //Screens
 import Welcome from './screens/Onboarding/Welcome';
@@ -21,6 +19,9 @@ import RequestPlan from './screens/Plans/RequestPlan';
 import EditProfile from './screens/EditProfile';
 import MemberInviteConfirmed from './screens/Team/Add/MemberInviteConfirmed';
 import TRequestSentConfirmed from './screens/Invoices/Add/TRequestSentConfirmed';
+import EditTeamMember from './screens/Team/Edit/EditTeamMember';
+import DeleteConfirmed from './screens/Team/Edit/DeleteConfirmed';
+import RequestSentConfirmed from './screens/Plans/RequestSentConfirmed';
 
 
 const Stack = createStackNavigator();
@@ -44,6 +45,9 @@ const AppStack = () => {
       <Stack.Screen name="EditProfile" component={EditProfile}/>
       <Stack.Screen name="MemberInviteConfirmed" component={MemberInviteConfirmed}/>
       <Stack.Screen name="TRequestSentConfirmed" component={TRequestSentConfirmed}/>
+      <Stack.Screen name="EditTeamMember" component={EditTeamMember}/>
+      <Stack.Screen name="DeleteConfirmed" component={DeleteConfirmed}/>
+      <Stack.Screen name="RequestSentConfirmed" component={RequestSentConfirmed}/>
     </Stack.Navigator>
   );
 };

@@ -195,7 +195,7 @@ const RequestPlan = () => {
                                         scrollEnabled={true} // Enable scrolling
                                     />
                                 </View>
-                                <TouchableOpacity style={styles.sendButton}>
+                                <TouchableOpacity style={styles.sendButton} onPress={() => {navigation.navigate('RequestSentConfirmed')}}>
                                     <Text style={styles.sendButtonText}>Submit request</Text>
                                     <Image source={require('../../assets/right-arrow.png')} style={styles.buttonArrow} />
                                 </TouchableOpacity>
