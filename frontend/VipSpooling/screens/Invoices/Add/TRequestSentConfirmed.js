@@ -41,7 +41,7 @@ const styles= StyleSheet.create({
     },
 });
 
-const MemberInviteConfirmed = () => {
+const TRequestSentConfirmed = () => {
     const navigation = useNavigation();
     const isDarkMode = useSelector((state) =>  state.theme.isDarkMode);
 
@@ -53,7 +53,7 @@ const MemberInviteConfirmed = () => {
         <ImageBackground source={backgroundImage} style={styles.background}>
             <View style={styles.container}>
                 <Card style={{marginBottom: '50'}}>
-                    <Text style={styles.text}>Invitation Sent ✅</Text>
+                    <Text style={styles.text}>Request Sent ✅</Text>
                 </Card>
                 <TouchableOpacity style={styles.button} onPress={() => {navigation.navigate('Home')}}>
                     <Text style={styles.buttonText}>Back to Home</Text>
@@ -67,4 +67,4 @@ const MemberInviteConfirmed = () => {
     );
 };
 
-export default MemberInviteConfirmed;
+export default TRequestSentConfirmed;

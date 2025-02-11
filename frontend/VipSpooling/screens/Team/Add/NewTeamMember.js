@@ -316,7 +316,7 @@ const NewTeamMember = () => {
                                     />
                                 </View>
                                 {/**BUTTON SECTION*/}
-                                <TouchableOpacity style={styles.inviteButton}>
+                                <TouchableOpacity style={styles.inviteButton} onPress={() => {navigation.navigate('MemberInviteConfirmed')}}>
                                     <Text style={styles.inviteButtonText}>
                                         Send Invitation Code
                                     </Text>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switch, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../store/themeSlice';
@@ -126,30 +126,55 @@ const styles = StyleSheet.create({
     logoutText: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: 'red',
+        color: '#B0AEAE',
         marginLeft: 10,
     },
     logoutIcon: {
         width: 21,
         height: 21,
-        tintColor: 'red',
+        tintColor: '#B0AEAE',
     },
     logoutArrow: {
         width: 21,
         height: 21,
-        tintColor: 'red',
+        tintColor: '#B0AEAE',
     },
     cardIcon: {
         width: 25,
         height: 25,
     },
+    goBackButton: {
+        position: 'absolute',
+        top: 40,
+        left: 2,
+        flexDirection: 'column',
+        alignItems: 'center',
+    },
+    goBackIcon: {
+        width: 24,
+        height: 24,
+        marginRight: 5,
+    },
+    goBackText: {
+        fontSize: 16,
+        fontWeight: '600'
+    },
+    input: {
+        fontSize: 14,
+        fontWeight: '500',
+        width: 235,
+        textAlign: 'right',
+    }
 });
 
-const Settings = () => {
+const EditProfile = () => {
     const navigation = useNavigation();
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
     const dispatch = useDispatch();
     const [pushNotifications, setPushNotifications] = useState(true);
+    const [role, setRole] = useState('');
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
 
     const backgroundImage = isDarkMode
         ? require('../assets/DarkMode.jpg')
@@ -157,10 +182,21 @@ const Settings = () => {
 
     return (
         <ImageBackground source={backgroundImage} style={styles.background}>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.container}>
                 
                 {/* HEADER SECTION */}
                 <View style={styles.header}>
+                    <TouchableOpacity
+                        style={styles.goBackButton}
+                        onPress={() => {navigation.goBack()}}
+                    >
+                        <Image
+                            source={require('../assets/arrowBack.png')}
+                            style={[styles.goBackIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]}
+                        />
+                        <Text style={[styles.goBackText, { color: isDarkMode ? '#fff' : '#000'}]}> Go Back</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => dispatch(toggleTheme())}>
                         <Image
                             source={isDarkMode ? require('../assets/sun.png') : require('../assets/moon.png')}
@@ -174,8 +210,8 @@ const Settings = () => {
                     <View style={styles.profileCircle}>
                         <Image source={require('../assets/manager.png')} style={[styles.profileIcon, {borderColor: isDarkMode ? '#fff' : '#000'}]} />
                     </View>
-                    <TouchableOpacity style={styles.editProfileButton} onPress={() => {navigation.navigate('EditProfile')}}>
-                        <Text style={styles.editProfileText}>Edit Profile</Text>
+                    <TouchableOpacity style={styles.editProfileButton}>
+                        <Text style={styles.editProfileText}>Change Picture</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -187,47 +223,60 @@ const Settings = () => {
                             <Image source={require('../assets/admin.png')} style={[styles.cardIcon, { tintColor:  isDarkMode ? '#fff' : '#000'}]} />
                             <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Role:</Text>
                         </View>
-                        <Text style={[styles.value, {color: isDarkMode ? '#fff' : '#000'}]}>Admin</Text>
+                        <TextInput
+                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000' }]}
+                            value={role}
+                            onChangeText={setRole}
+                        />
                     </View>
                     <View style={styles.row}>
                         <View style={styles.labelContainer}>
                             <Image source={require('../assets/id.png')} style={[styles.cardIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]} />
                             <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Name:</Text>
                         </View>
-                        <Text style={[styles.value, {color: isDarkMode ? '#fff' :'#000'}]}>Toby Green</Text>
+                        <TextInput
+                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000'}]}
+                            value={name}
+                            onChangeText={setName}
+                        />
                     </View>
                     <View style={styles.lastRow}>
                         <View style={styles.labelContainer}>
                             <Image source={require('../assets/mail2.png')} style={[styles.cardIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} />
                             <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Email:</Text>
                         </View>
-                        <Text style={[styles.value, {color: isDarkMode ? '#fff' : '#000'}]}>toby.green@vipspooling.com</Text>
+                        <TextInput
+                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000' }]}
+                            value={email}
+                            onChangeText={setEmail}
+                            keyboardType='email-address'
+                        />
                     </View>
                 </Card>
 
                 {/* SUPPORT & NOTIFICATIONS SECTION */}
-                <Card isDarkMode={isDarkMode} style={styles.card}>
+                <Card isDarkMode={isDarkMode} style={[styles.card, { backgroundColor: '#EAE7E7'}]}>
                     <TouchableOpacity style={styles.row}>
                         <View style={styles.labelContainer}>
-                            <Image source={require('../assets/support.png')} style={[styles.cardIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} />
-                            <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Support</Text>
+                            <Image source={require('../assets/support.png')} style={[styles.cardIcon, {tintColor: '#B0AEAE'}]} />
+                            <Text style={[styles.label, {color: '#B0AEAE'}]}>Support</Text>
                         </View>
-                        <Image source={require('../assets/right-arrow.png')} style={[styles.logoutIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]} />
+                        <Image source={require('../assets/right-arrow.png')} style={[styles.logoutIcon, { tintColor: '#B0AEAE'}]} />
                     </TouchableOpacity>
                     <View style={styles.row}>
                         <View style={styles.labelContainer}>
-                            <Image source={require('../assets/notifications.png')} style={[styles.cardIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} />
-                            <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Push Notifications</Text>
+                            <Image source={require('../assets/notifications.png')} style={[styles.cardIcon, {tintColor: '#B0AEAE'}]} />
+                            <Text style={[styles.label, {color: '#B0AEAE'}]}>Push Notifications</Text>
                         </View>
                         <Switch
                             value={pushNotifications}
                             onValueChange={() => setPushNotifications(!pushNotifications)}
-                            trackColor={{ false: '#ccc', true: '#3ec951' }}
+                            trackColor={{ false: '#ccc', true: '#ccc' }}
                             thumbColor={pushNotifications ? '#fff' : '#f4f3f4'}
                             style={{ transform: [{ scaleX: 0.7}, {scaleY: 0.7}], left: 12}}
                         />
                     </View>
-                    <TouchableOpacity style={styles.lastRow} onPress={() => (navigation.navigate('Welcome'))}>
+                    <TouchableOpacity style={styles.lastRow}>
                         <View style={styles.labelContainer}>
                             <Image source={require('../assets/logout.png')} style={styles.logoutIcon} />
                             <Text style={styles.logoutText}>Logout</Text>
@@ -235,10 +284,13 @@ const Settings = () => {
                         <Image source={require('../assets/right-arrow.png')} style={styles.logoutArrow} />
                     </TouchableOpacity>
                 </Card>
+                <TouchableOpacity style={styles.editProfileButton}>
+                        <Text style={styles.editProfileText}>Save Changes</Text>
+                </TouchableOpacity>
             </View>
-            <CustomBottomTab/>
+            </TouchableWithoutFeedback>
         </ImageBackground>
     );
 };
 
-export default Settings;
+export default EditProfile;

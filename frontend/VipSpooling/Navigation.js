@@ -18,6 +18,9 @@ import Plans from './screens/Plans/Plans';
 import ViewForm from './screens/Invoices/ViewForm';
 import RequestTemplates from './screens/Invoices/Request/RequestTemplates';
 import RequestPlan from './screens/Plans/RequestPlan';
+import EditProfile from './screens/EditProfile';
+import MemberInviteConfirmed from './screens/Team/Add/MemberInviteConfirmed';
+import TRequestSentConfirmed from './screens/Invoices/Add/TRequestSentConfirmed';
 
 
 const Stack = createStackNavigator();
@@ -38,6 +41,9 @@ const AppStack = () => {
       <Stack.Screen name="ViewForm" component={ViewForm}/>
       <Stack.Screen name="RequestTemplates" component={RequestTemplates}/>
       <Stack.Screen name="RequestPlan" component={RequestPlan}/>
+      <Stack.Screen name="EditProfile" component={EditProfile}/>
+      <Stack.Screen name="MemberInviteConfirmed" component={MemberInviteConfirmed}/>
+      <Stack.Screen name="TRequestSentConfirmed" component={TRequestSentConfirmed}/>
     </Stack.Navigator>
   );
 };
