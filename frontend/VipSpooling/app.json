@@ -23,11 +23,6 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "extra":{
-      "awsRegion":"us-east-1",
-      "userPoolId": "us-east-1_Sk6JKaM2w",
-      "userPoolWebClientId": "3iefeb0g06d7te07ekdonnjlgn"
     }
   }
 }
