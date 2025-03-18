@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ImageBackground, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Card from '../../components/Card';
 import { useSelector } from 'react-redux';
+import { Auth } from 'aws-amplify';
 
 const styles = StyleSheet.create({
     background:{
@@ -33,10 +34,6 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         color: '#000',
     },
-    inputFieldContainer: {
-        width: '100%',
-        marginBottom: 20,
-    },
     inputField: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -45,7 +42,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingVertical: 14,
         marginBottom: 22,
-        width:'100%',
+        width: '100%',
     },
     fieldText: {
         position: 'relative',
@@ -103,27 +100,83 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    errorText: {
+        color: 'red',
+        fontSize: 14,
+        marginBottom: 10,
+        textAlign: 'center',
+    },
 });
 
 const SetUp = () => {
     const navigation = useNavigation();
+    const route = useRoute();
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
+    const [name, setName] = useState('');
+    const [email] = useState(route.params?.email || '');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const backgroundImage = isDarkMode
-    ? require('../../assets/DarkMode.jpg')
-    : require('../../assets/LightMode.jpg')
+        ? require('../../assets/DarkMode.jpg')
+        : require('../../assets/LightMode.jpg');
+/**
+ * Handles the submission of the new password and confirmation
+ * Utilizes the Auth.completeNewPassword() method from AWS Amplify to complete the new password challenge
+ * @returns {void}
+ */
+    const handleSignUp = async () => {
+        if (!name || !password || !confirmPassword) {
+            setError('Please fill in all fields');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        if (password.length < 8) {
+            setError('Password must be at least 8 characters long');
+            return;
+        }
+
+        try {
+            setError('');
+            setLoading(true);
+
+            // First, sign in with the temporary password
+            const user = await Auth.signIn(email, '1234'); // Use the temporary password from email
+
+            // Then, complete the new password challenge
+            await Auth.completeNewPassword(user, password, {
+                name: name
+            });
+
+            console.log('SetUp-handleSignUp() => Sign-up success');
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+            });
+        } catch (err) {
+            console.error('SetUp-handleSignUp() => Sign-up failed:', err);
+            setError(err.message || 'Sign-up failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <ImageBackground source={backgroundImage} style={styles.background}>
-            <KeyboardAvoidingView style= {styles.container} behavior='padding'>
+            <KeyboardAvoidingView style={styles.container} behavior='padding'>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={styles.container}>
                         {/* Go Back Button */}
                         <TouchableOpacity
                             style={styles.goBackButton}
-                            onPress={() => {
-                                navigation.navigate('Welcome');
-                            }}
+                            onPress={() => navigation.navigate('Welcome')}
                         >
                             <Image
                                 source={require('../../assets/arrowBack.png')}
@@ -143,63 +196,72 @@ const SetUp = () => {
 
                         {/* TITLE */}
                         <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000' }]}>
-                            Set up your profile. ✍️
-
+                            Set up your profile ✍️
                         </Text>
 
                         {/* CARD COMPONENT */}
-                        <Card isDarkMode={isDarkMode} >
+                        <Card isDarkMode={isDarkMode}>
                             <View style={styles.cardContainerContent}>
-                                {/*NAME INPUT FIELD*/}
-                                 <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Name</Text>
-                                 <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                                     <TextInput
+                                {/* NAME INPUT FIELD */}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Name</Text>
+                                <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                                    <TextInput
                                         placeholder="Full Name"
                                         placeholderTextColor={isDarkMode ? "#5e5e5e" : '#aaa'}
-                                        style={styles.inputText}
+                                        style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                        value={name}
+                                        onChangeText={setName}
                                         keyboardType='ascii-capable'
-                                        autoCapitalize='none'
+                                        autoCapitalize='words'
                                     />
                                 </View>
-                                {/**EMAIL INPUT FIELD*/}
+
+                                {/* EMAIL DISPLAY */}
                                 <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Email</Text>
                                 <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                                    <TextInput
-                                        placeholder="Email Address"
-                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
-                                        style={styles.inputText}
-                                        keyboardType='email-address'
-                                        autoCapitalize='none'
-                                    />
+                                    <Text style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                        {email}
+                                    </Text>
                                 </View>
-                                {/**PASSWORD INPUT FIELD*/}
-                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Password</Text>
+
+                                {/* NEW PASSWORD INPUT FIELD */}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>New Password</Text>
                                 <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
                                     <TextInput
-                                        placeholder="Password"
+                                        placeholder="Enter new password"
                                         placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
-                                        style={styles.inputText}
-                                        secureTextEntry={true}
-                                    />
-                                </View>
-                                {/**CONFIRM PASSWORD INPUT FIELD*/}
-                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Confirm Password</Text>
-                                <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                                    <TextInput
-                                        placeholder="Confirm Password"
-                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
-                                        style={styles.inputText}
+                                        style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                        value={password}
+                                        onChangeText={setPassword}
                                         secureTextEntry={true}
                                     />
                                 </View>
 
-                                 {/*CONTINUE BUTTON
-//                                     - ONLY ACCSSIBLE IF: TERMS AND CONDITIOND AND PRIVACY POLICY IS AGREED WITH
-//                                 */}
-                                 <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('Home')}>
-                                     <Text style={styles.continueButtonText}>
-                                         Continue
-                                     </Text>
+                                {/* CONFIRM PASSWORD INPUT FIELD */}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Confirm New Password</Text>
+                                <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                                    <TextInput
+                                        placeholder="Confirm new password"
+                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
+                                        style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                        value={confirmPassword}
+                                        onChangeText={setConfirmPassword}
+                                        secureTextEntry={true}
+                                    />
+                                </View>
+
+                                {/* ERROR MESSAGE */}
+                                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+                                {/* CONTINUE BUTTON */}
+                                <TouchableOpacity 
+                                    style={[styles.continueButton, loading && { opacity: 0.7 }]} 
+                                    onPress={handleSignUp}
+                                    disabled={loading}
+                                >
+                                    <Text style={styles.continueButtonText}>
+                                        {loading ? 'Setting up...' : 'Continue'}
+                                    </Text>
                                 </TouchableOpacity>
                             </View>
                         </Card>

@@ -3,8 +3,10 @@ import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switc
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../store/themeSlice';
+import { clearAuth } from '../store/authSlice';
 import Card from '../components/Card';
 import CustomBottomTab from '../components/CustomBottomTab';
+import { Auth } from 'aws-amplify';
 
 const styles = StyleSheet.create({
     background: {
@@ -155,6 +157,30 @@ const Settings = () => {
         ? require('../assets/DarkMode.jpg')
         : require('../assets/LightMode.jpg');
 
+    const handleLogout = async () => {
+        try {
+            // Sign out from AWS Cognito
+            await Auth.signOut();
+            
+            // Clear Redux auth state
+            dispatch(clearAuth());
+            
+            // Navigate to Welcome screen
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Welcome' }],
+            });
+        } catch (error) {
+            console.error('Settings-handleLogout() => Error:', error);
+            // Even if Cognito sign out fails, clear local state and navigate
+            dispatch(clearAuth());
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Welcome' }],
+            });
+        }
+    };
+
     return (
         <ImageBackground source={backgroundImage} style={styles.background}>
             <View style={styles.container}>
@@ -227,7 +253,7 @@ const Settings = () => {
                             style={{ transform: [{ scaleX: 0.7}, {scaleY: 0.7}], left: 12}}
                         />
                     </View>
-                    <TouchableOpacity style={styles.lastRow} onPress={() => (navigation.navigate('Welcome'))}>
+                    <TouchableOpacity style={styles.lastRow} onPress={handleLogout}>
                         <View style={styles.labelContainer}>
                             <Image source={require('../assets/logout.png')} style={styles.logoutIcon} />
                             <Text style={styles.logoutText}>Logout</Text>

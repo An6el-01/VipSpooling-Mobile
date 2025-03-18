@@ -185,6 +185,7 @@ const NewTeamMember = () => {
 
     const roles = [
         { label: 'Admin', value: 'admin' },
+        { label: 'Manager', value: 'manager'},
         { label: 'Team Member', value: 'teamMember' },
     ]
 
