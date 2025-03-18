@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, TextInput, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../../store/themeSlice';
 import Card from '../../components/Card';
 import CustomBottomTab from '../../components/CustomBottomTab';
+import { Auth } from 'aws-amplify';
+import { endpoints } from '../../config';
 
 const styles = StyleSheet.create({
     background: {
@@ -117,21 +119,98 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         tintColor: '#fff',
-    }
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        fontSize: 16,
+        textAlign: 'center',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    emptyText: {
+        fontSize: 16,
+        textAlign: 'center',
+    },
 });
 
 const MyTeam = () => {
     const navigation = useNavigation();
-    const isDarkMode = useSelector((state) =>  state.theme.isDarkMode);
+    const isDarkMode = useSelector((state) => state.theme.isDarkMode);
     const dispatch = useDispatch();
     const [searchQuery, setSearchQuery] = useState('');
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const backgroundImage = isDarkMode
         ? require('../../assets/DarkMode.jpg')
-        : require('../../assets/LightMode.jpg')
+        : require('../../assets/LightMode.jpg');
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+/**
+ * This function fetches users from the backend using the API endpoint  
+ * and updates the users state with the fetched data.
+ * It also handles loading and error states.
+ */
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // Get the current authenticated user's session
+            const session = await Auth.currentSession();
+            const accessToken = session.getAccessToken().getJwtToken();
+            
+            // Make an API call to your backend to get users
+            const response = await fetch(endpoints.users, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch users');
+            }
+
+            const data = await response.json();
+            setUsers(data.users);
+        } catch (err) {
+            console.error('Error fetching users:', err);
+            setError('Failed to load users. Please try again later.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredUsers = users.filter(user => 
+        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return(
-        <ImageBackground source={backgroundImage} style = {styles.background}>
+        <ImageBackground source={backgroundImage} style={styles.background}>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.container}>
                     {/*Header Section*/}
@@ -150,7 +229,7 @@ const MyTeam = () => {
                                     style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
                                 />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() =>  {navigation.navigate('Settings')}}>
+                            <TouchableOpacity onPress={() => {navigation.navigate('Settings')}}>
                                 <Image
                                     source={require('../../assets/settings.png')}
                                     style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
@@ -163,7 +242,7 @@ const MyTeam = () => {
                         styles.searchContainer,
                         {
                             backgroundColor: isDarkMode ? '#000' : '#fff',
-                            borderColor:  isDarkMode ? '#fff' : '#000'
+                            borderColor: isDarkMode ? '#fff' : '#000'
                         }
                     ]}>
                         <Image
@@ -181,22 +260,45 @@ const MyTeam = () => {
                     {/*MY TEAM SECTION*/}
                     <View style={styles.activitySection}>
                         <Card isDarkMode={isDarkMode} style={{padding: 8}}>
-                            {[1,2,3,4,5,6].map((item, index) => (
-                                <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
-                                    <View style={styles.activityDetails}>
-                                        <Text style={[styles.activityText, { color: isDarkMode ? '#fff' : '#000'}]}>User {item}</Text>
-                                        <Text style={[styles.activityText, {fontSize: 12}]}>
-                                            Role: {item === 1 ? 'Admin' : 'Team Member'}
-                                        </Text>
-                                    </View>
-                                    <TouchableOpacity onPress={() => {navigation.navigate('EditTeamMember')}}>
-                                        <Image
-                                            source={require('../../assets/view.png')}
-                                            style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
-                                        />
-                                    </TouchableOpacity>
+                            {loading ? (
+                                <View style={styles.loadingContainer}>
+                                    <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
+                                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                        Loading users...
+                                    </Text>
                                 </View>
-                            ))}
+                            ) : error ? (
+                                <View style={styles.errorContainer}>
+                                    <Text style={[styles.errorText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                        {error}
+                                    </Text>
+                                </View>
+                            ) : filteredUsers.length === 0 ? (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={[styles.emptyText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                        No users found
+                                    </Text>
+                                </View>
+                            ) : (
+                                filteredUsers.map((user, index) => (
+                                    <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
+                                        <View style={styles.activityDetails}>
+                                            <Text style={[styles.activityText, { color: isDarkMode ? '#fff' : '#000'}]}>
+                                                {user.name || 'Unnamed User'}
+                                            </Text>
+                                            <Text style={[styles.activityText, {fontSize: 12}]}>
+                                                Roles: {user.groups?.join(', ') || 'No roles'}
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity onPress={() => {navigation.navigate('EditTeamMember', { user })}}>
+                                            <Image
+                                                source={require('../../assets/view.png')}
+                                                style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))
+                            )}
                         </Card>
                         {/*FLOATING ADD BUTTON*/}
                         <TouchableOpacity
