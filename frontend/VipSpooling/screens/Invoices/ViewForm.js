@@ -134,7 +134,7 @@ const ViewForm = () => {
                     <Card style={[{marginTop: '40', backgroundColor:'#EAE7E7' }]}>
                         <View>
                             <Image
-                                source={require('../../assets/AutomaticInvoiceForm.jpg')}
+                                source={require('../../assets/InvoiceForm.jpg')}
                                 style={styles.formImage}
                             />
                             <TouchableOpacity style={styles.editButton}>

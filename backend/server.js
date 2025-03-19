@@ -5,6 +5,7 @@ const {
     ListUsersCommand,
     AdminListGroupsForUserCommand 
 } = require('@aws-sdk/client-cognito-identity-provider');
+const { S3Client, ListObjectsV2Command, ListBucketsCommand } = require('@aws-sdk/client-s3');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
@@ -17,6 +18,14 @@ app.use(express.json());
 app.use(cors()); // Enable CORS for all routes
 
 const cognitoClient = new CognitoIdentityProviderClient({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    }
+});
+
+const s3Client = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -116,6 +125,78 @@ app.get('/api/users', async (req, res) => {
     } catch (error) {
         console.error('Error fetching users:', error);
         res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// Function to list all available S3 buckets
+async function listBuckets() {
+    try {
+        const command = new ListBucketsCommand({});
+        const response = await s3Client.send(command);
+        console.log('Available buckets:', response.Buckets.map(bucket => bucket.Name));
+        return response.Buckets;
+    } catch (error) {
+        console.error('Error listing buckets:', error);
+        throw error;
+    }
+}
+
+// Get all templates from S3
+app.get('/api/templates', async (req, res) => {
+    try {
+        // First, list all available buckets
+        const buckets = await listBuckets();
+        
+        // Find the correct bucket for templates
+        const templateBucket = buckets.find(bucket => 
+            bucket.Name.includes('vipinvoices') && bucket.Name.includes('templates')
+        );
+
+        if (!templateBucket) {
+            throw new Error('Template bucket not found');
+        }
+
+        console.log('Using bucket:', templateBucket.Name);
+
+        const params = {
+            Bucket: templateBucket.Name,
+            Prefix: '' // Remove the prefix to see all objects
+        };
+
+        const command = new ListObjectsV2Command(params);
+        const response = await s3Client.send(command);
+
+        console.log('S3 Response:', JSON.stringify(response, null, 2));
+
+        // Check if there are any contents
+        if (!response.Contents || response.Contents.length === 0) {
+            console.log('No objects found in bucket');
+            return res.status(200).json({ templates: [] });
+        }
+
+        // Transform the S3 objects into template data
+        const templates = response.Contents
+            .filter(item => item.Key !== '') // Filter out empty keys
+            .map(item => {
+                // Extract template name from the key
+                const name = item.Key.split('/').pop().replace(/\.[^/.]+$/, '');
+                // Create a URL for the template
+                const url = `https://${templateBucket.Name}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.Key}`;
+                
+                return {
+                    id: item.ETag,
+                    name: name,
+                    url: url,
+                    lastModified: item.LastModified,
+                    size: item.Size
+                };
+            });
+
+        console.log('Processed templates:', templates);
+        res.status(200).json({ templates });
+    } catch (error) {
+        console.error('Error fetching templates:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 

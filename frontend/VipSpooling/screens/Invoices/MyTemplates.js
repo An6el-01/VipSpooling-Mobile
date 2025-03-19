@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Image, ActivityIndicator, ScrollView } from 'react-native';
 import { useNavigation} from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../../store/themeSlice';
 import Card from '../../components/Card';
+import { Auth } from 'aws-amplify';
+import { endpoints } from '../../config';
 
 const styles = StyleSheet.create({
     background: {
@@ -58,17 +60,51 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    cardImage: {
-        width: 150,
-        height: 150,
-        resizeMode: 'contain',
+    templatesContainer: {
+        flex: 1,
+        width: '100%',
     },
-    form:{
-        flexDirection: 'column',
+    templatesContentContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        padding: 1,
     },
-    formLabelText: {
-      textAlign: 'center', 
-      marginTop: 10, 
+    templateItem: {
+        width: '48%',
+        marginBottom: 5,
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        overflow: 'hidden',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    templateImage: {
+        width: '110%',
+        height: 170,
+        paddingTop: 2,
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+    },
+    templateInfo: {
+        padding: 12,
+    },
+    templateName: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 4,
+        color: '#333',
+        textAlign: 'center',
+    },
+    templateDate: {
+        fontSize: 12,
+        color: '#666',
+        textAlign: 'center',
     },
     requestButton: {
         backgroundColor: '#FFD700',
@@ -98,86 +134,203 @@ const styles = StyleSheet.create({
         height: 22,
         width: 22,
         marginLeft: 15,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        fontSize: 16,
+        textAlign: 'center',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyText: {
+        fontSize: 16,
+        textAlign: 'center',
     }
 });
 
+const getTemplateImage = (templateName) => {
+    // Convert template name to lowercase for case-insensitive matching
+    const name = templateName.toLowerCase();
+    
+    // Map template names to their corresponding images
+    if (name.includes('jsa')) {
+        return require('../../assets/JSAForm.jpg');
+    } else if(name.includes('invoice')){
+        return require('../../assets/InvoiceForm.jpg');
+    } else {
+        // Default image if no match is found
+        return require('../../assets/noImage.jpg');
+    }
+};
+
 const MyTemplates = () => {
     const navigation = useNavigation();
-    const isDarkMode = useSelector((state) =>  state.theme.isDarkMode);
-    const dispatch = useDispatch(); 
+    const isDarkMode = useSelector((state) => state.theme.isDarkMode);
+    const dispatch = useDispatch();
+    const [templates, setTemplates] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const backgroundImage = isDarkMode
-    ? require('../../assets/DarkMode.jpg')
-    : require('../../assets/LightMode.jpg') 
+        ? require('../../assets/DarkMode.jpg')
+        : require('../../assets/LightMode.jpg');
+
+    useEffect(() => {
+        fetchTemplates();
+    }, []);
+
+    const fetchTemplates = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const session = await Auth.currentSession();
+            const accessToken = session.getAccessToken().getJwtToken();
+            
+            const response = await fetch(endpoints.templates, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch templates');
+            }
+
+            const data = await response.json();
+            setTemplates(data.templates);
+        } catch (err) {
+            console.error('Error fetching templates:', err);
+            setError('Failed to load templates. Please try again later.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
 
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
             <View style={styles.container}>
-               {/**HEADER SECTION*/}
-               <View style={styles.header}>
-                <Text style={[styles.title, {color: isDarkMode ? '#fff' : '#000'}]}>
-                    Select A Template
-                </Text>
-                <TouchableOpacity
-                    style={styles.goBackButton}
-                    onPress={() => {navigation.goBack()}}
-                >
-                    <Image 
-                        source={require('../../assets/arrowBack.png')} 
-                        style={[styles.goBackIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} 
-                    />
-                    <Text style={[styles.goBackText, { color: isDarkMode ? '#fff' : '#000'}]}>Go Back</Text>
-                </TouchableOpacity>
-                <View style={styles.headerIcons}>
-                    <TouchableOpacity onPress={() => dispatch(toggleTheme())}>
-                        <Image
-                            source={isDarkMode 
-                            ? require('../../assets/sun.png') 
-                            : require('../../assets/moon.png')
-                        }
-                            style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
+                {/*HEADER SECTION*/}
+                <View style={styles.header}>
+                    <Text style={[styles.title, {color: isDarkMode ? '#fff' : '#000'}]}>
+                        Select A Template
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.goBackButton}
+                        onPress={() => {navigation.goBack()}}
+                    >
+                        <Image 
+                            source={require('../../assets/arrowBack.png')} 
+                            style={[styles.goBackIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} 
                         />
+                        <Text style={[styles.goBackText, { color: isDarkMode ? '#fff' : '#000'}]}>Go Back</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => {navigation.navigate('Settings')}}>
-                        <Image
-                            source={require('../../assets/settings.png')}
-                            style={[styles.headerIcon, {tintColor: isDarkMode ? '#fff' : '#000' }]}
-                        />
-                    </TouchableOpacity>
-                </View>  
-               </View>
-               {/**CARD SECTION*/}
-               <Card isDarkMode={isDarkMode} style={{ height: 550, justifyContent: 'center', backgroundColor: '#d5cfcf', borderColor: '#000'}}>
-                <View style={styles.cardContent}>
-                    <View style={{flexDirection: 'row'}}>
-                        <TouchableOpacity style={styles.form}>
+                    <View style={styles.headerIcons}>
+                        <TouchableOpacity onPress={() => dispatch(toggleTheme())}>
                             <Image
-                                source={require('../../assets/AutomaticInvoiceForm.jpg')}
-                                style={styles.cardImage}
+                                source={isDarkMode 
+                                    ? require('../../assets/sun.png') 
+                                    : require('../../assets/moon.png')
+                                }
+                                style={[styles.headerIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
                             />
-                            <Text style={styles.formLabelText}> Automatic Invoice Form</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.form}>
+                        <TouchableOpacity onPress={() => {navigation.navigate('Settings')}}>
                             <Image
-                                source={require('../../assets/JSAForm.jpg')}
-                                style={styles.cardImage}
+                                source={require('../../assets/settings.png')}
+                                style={[styles.headerIcon, {tintColor: isDarkMode ? '#fff' : '#000' }]}
                             />
-                            <Text style={styles.formLabelText}>JSA Form</Text>
                         </TouchableOpacity>
-                        
-                    </View>
-                   
-                    <TouchableOpacity style={styles.requestButton} onPress={() => {navigation.navigate('RequestTemplates')}}>
-                        <Text style={styles.requestButtonText}>
-                            Request a new template
-                        </Text>
-                        <Image
-                            source={require('../../assets/right-arrow.png')}
-                            style={styles.buttonArrow}
-                        />
-                    </TouchableOpacity>
+                    </View>  
                 </View>
-               </Card>
+                {/*CARD SECTION*/}
+                <Card isDarkMode={isDarkMode} style={{ height: 550, justifyContent: 'center', backgroundColor: '#d5cfcf', borderColor: '#000'}}>
+                    <View style={styles.cardContent}>
+                        {loading ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
+                                <Text style={[styles.formLabelText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                    Loading templates...
+                                </Text>
+                            </View>
+                        ) : error ? (
+                            <View style={styles.errorContainer}>
+                                <Text style={[styles.errorText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                    {error}
+                                </Text>
+                            </View>
+                        ) : templates.length === 0 ? (
+                            <View style={styles.emptyContainer}>
+                                <Text style={[styles.emptyText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                    No templates available
+                                </Text>
+                            </View>
+                        ) : (
+                            <ScrollView 
+                                style={styles.templatesContainer}
+                                contentContainerStyle={styles.templatesContentContainer}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                {templates.map((template) => (
+                                    <TouchableOpacity 
+                                        key={template.id} 
+                                        style={styles.templateItem}
+                                        onPress={() => {
+                                            // Handle template selection
+                                            console.log('Selected template:', template);
+                                        }}
+                                    >
+                                        <Image
+                                            source={getTemplateImage(template.name)}
+                                            style={styles.templateImage}
+                                            resizeMode="contain"
+                                        />
+                                        <View style={styles.templateInfo}>
+                                            <Text style={styles.templateName} numberOfLines={2}>
+                                                {template.name}
+                                            </Text>
+                                            <Text style={styles.templateDate}>
+                                                {formatDate(template.lastModified)}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        )}
+                       
+                        <TouchableOpacity style={styles.requestButton} onPress={() => {navigation.navigate('RequestTemplates')}}>
+                            <Text style={styles.requestButtonText}>
+                                Request a new template
+                            </Text>
+                            <Image
+                                source={require('../../assets/right-arrow.png')}
+                                style={styles.buttonArrow}
+                            />
+                        </TouchableOpacity>
+                    </View>
+                </Card>
             </View>
         </ImageBackground>
     );
