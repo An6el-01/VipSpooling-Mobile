@@ -7,7 +7,11 @@ import authReducer from './authSlice';
 const persistConfig = {
     key: 'root',
     storage: AsyncStorage,
-    whitelist: ['auth', 'theme'] // specify which reducers to persist
+    whitelist: ['auth', 'theme'],
+    timeout: 10000, // 10 seconds timeout
+    writeFailHandler: (err) => {
+        console.error('Error persisting state:', err);
+    }
 };
 
 const rootReducer = combineReducers({
@@ -24,7 +28,9 @@ export const store = configureStore({
             serializableCheck: {
                 ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
             },
+            immutableCheck: false, // Disable immutable state checks in development
         }),
+    devTools: process.env.NODE_ENV !== 'production',
 });
 
 export const persistor = persistStore(store);

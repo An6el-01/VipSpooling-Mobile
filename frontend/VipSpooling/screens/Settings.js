@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switch } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switch, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../store/themeSlice';
-import { clearAuth } from '../store/authSlice';
+import { clearAuth, setUserGroups, setUserAttributes } from '../store/authSlice';
 import Card from '../components/Card';
 import CustomBottomTab from '../components/CustomBottomTab';
 import { Auth } from 'aws-amplify';
+import { endpoints } from '../config';
 
 const styles = StyleSheet.create({
     background: {
@@ -150,36 +151,112 @@ const styles = StyleSheet.create({
 const Settings = () => {
     const navigation = useNavigation();
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
+    const userAttributes = useSelector((state) => state.auth.userAttributes) || {};
+    const userGroups = useSelector((state) => state.auth.userGroups) || [];
     const dispatch = useDispatch();
     const [pushNotifications, setPushNotifications] = useState(true);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const backgroundImage = isDarkMode
-        ? require('../assets/DarkMode.jpg')
-        : require('../assets/LightMode.jpg');
+    // Memoize the background image
+    const backgroundImage = useMemo(() => 
+        isDarkMode ? require('../assets/DarkMode.jpg') : require('../assets/LightMode.jpg'),
+        [isDarkMode]
+    );
 
-    const handleLogout = async () => {
+    // Memoize the user role calculation
+    const userRole = useMemo(() => 
+        userGroups && userGroups.length > 0 ? userGroups[0] : 'User',
+        [userGroups]
+    );
+
+    const fetchUserData = useCallback(async () => {
         try {
-            // Sign out from AWS Cognito
+            setLoading(true);
+            setError(null);
+            console.log('Starting fetchUserData');
+            
+            const session = await Auth.currentSession();
+            const accessToken = session.getAccessToken().getJwtToken();
+            const userEmail = session.getIdToken().payload.email;
+            
+            console.log('Fetching from endpoint:', endpoints.users);
+            const response = await fetch(endpoints.users, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch user data: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const currentUser = data.users.find(u => u.email === userEmail);
+            
+            if (currentUser) {
+                dispatch(setUserGroups(currentUser.groups));
+                dispatch(setUserAttributes({
+                    name: currentUser.name,
+                    email: currentUser.email,
+                    role: currentUser.groups[0] || 'User'
+                }));
+            } else {
+                setError('User data not found');
+            }
+        } catch (error) {
+            console.error('Error in fetchUserData:', error);
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [dispatch]);
+
+    useEffect(() => {
+        fetchUserData();
+    }, [fetchUserData]);
+
+    const handleLogout = useCallback(async () => {
+        try {
             await Auth.signOut();
-            
-            // Clear Redux auth state
             dispatch(clearAuth());
-            
-            // Navigate to Welcome screen
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'Welcome' }],
             });
         } catch (error) {
             console.error('Settings-handleLogout() => Error:', error);
-            // Even if Cognito sign out fails, clear local state and navigate
             dispatch(clearAuth());
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'Welcome' }],
             });
         }
-    };
+    }, [dispatch, navigation]);
+
+    if (loading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
+                <Text style={{ marginTop: 10, color: isDarkMode ? '#fff' : '#000' }}>Loading...</Text>
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: 'red', textAlign: 'center' }}>{error}</Text>
+                <TouchableOpacity 
+                    style={[styles.editProfileButton, { marginTop: 20 }]} 
+                    onPress={fetchUserData}
+                >
+                    <Text style={styles.editProfileText}>Retry</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
         <ImageBackground source={backgroundImage} style={styles.background}>
@@ -213,21 +290,21 @@ const Settings = () => {
                             <Image source={require('../assets/admin.png')} style={[styles.cardIcon, { tintColor:  isDarkMode ? '#fff' : '#000'}]} />
                             <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Role:</Text>
                         </View>
-                        <Text style={[styles.value, {color: isDarkMode ? '#fff' : '#000'}]}>Admin</Text>
+                        <Text style={[styles.value, {color: isDarkMode ? '#fff' : '#000'}]}>{userRole}</Text>
                     </View>
                     <View style={styles.row}>
                         <View style={styles.labelContainer}>
                             <Image source={require('../assets/id.png')} style={[styles.cardIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]} />
                             <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Name:</Text>
                         </View>
-                        <Text style={[styles.value, {color: isDarkMode ? '#fff' :'#000'}]}>Toby Green</Text>
+                        <Text style={[styles.value, {color: isDarkMode ? '#fff' :'#000'}]}>{userAttributes.name || 'Not Set'}</Text>
                     </View>
                     <View style={styles.lastRow}>
                         <View style={styles.labelContainer}>
                             <Image source={require('../assets/mail2.png')} style={[styles.cardIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} />
                             <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Email:</Text>
                         </View>
-                        <Text style={[styles.value, {color: isDarkMode ? '#fff' : '#000'}]}>toby.green@vipspooling.com</Text>
+                        <Text style={[styles.value, {color: isDarkMode ? '#fff' : '#000'}]}>{userAttributes.email || 'Not Set'}</Text>
                     </View>
                 </Card>
 

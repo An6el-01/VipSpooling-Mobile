@@ -1,31 +1,56 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { persistReducer } from 'redux-persist';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const initialState = {
+    isAuthenticated: false,
+    user: null,
+    userGroups: [],
+    userAttributes: {
+        name: '',
+        email: '',
+        role: ''
+    }
+};
 
 const authSlice = createSlice({
     name: 'auth',
-    initialState: {
-        isAuthenticated: false,
-        accessToken: null,
-        idToken: null,
-        refreshToken: null,
-        user: null,
-    },
+    initialState,
     reducers: {
         setAuth: (state, action) => {
-            state.isAuthenticated = true;
-            state.accessToken = action.payload.accessToken;
-            state.idToken = action.payload.idToken;
-            state.refreshToken = action.payload.refreshToken;
-            state.user = action.payload.user || null;
+            state.isAuthenticated = action.payload;
+        },
+        setUser: (state, action) => {
+            state.user = action.payload;
+        },
+        setUserGroups: (state, action) => {
+            state.userGroups = action.payload || [];
+        },
+        setUserAttributes: (state, action) => {
+            state.userAttributes = action.payload || {
+                name: '',
+                email: '',
+                role: ''
+            };
         },
         clearAuth: (state) => {
             state.isAuthenticated = false;
-            state.accessToken = null;
-            state.idToken = null;
-            state.refreshToken = null;
             state.user = null;
-        },
-    },
+            state.userGroups = [];
+            state.userAttributes = {
+                name: '',
+                email: '',
+                role: ''
+            };
+        }
+    }
 });
 
-export const { setAuth, clearAuth } = authSlice.actions;
-export default authSlice.reducer;
+const persistConfig = {
+    key: 'auth',
+    storage: AsyncStorage,
+    whitelist: ['isAuthenticated', 'user', 'userGroups', 'userAttributes']
+};
+
+export const { setAuth, setUser, setUserGroups, setUserAttributes, clearAuth } = authSlice.actions;
+export default persistReducer(persistConfig, authSlice.reducer);
