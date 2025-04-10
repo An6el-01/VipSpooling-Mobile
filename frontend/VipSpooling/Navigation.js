@@ -22,7 +22,8 @@ import TRequestSentConfirmed from './screens/Invoices/Add/TRequestSentConfirmed'
 import EditTeamMember from './screens/Team/Edit/EditTeamMember';
 import DeleteConfirmed from './screens/Team/Edit/DeleteConfirmed';
 import RequestSentConfirmed from './screens/Plans/RequestSentConfirmed';
-
+import AddJsaForm from './screens/Invoices/Add/AddJsaForm';
+import AddInvoiceForm from './screens/Invoices/Add/AddInvoiceForm';
 
 const Stack = createStackNavigator();
 
@@ -49,6 +50,8 @@ const AppStack = () => {
       <Stack.Screen name="EditTeamMember" component={EditTeamMember}/>
       <Stack.Screen name="DeleteConfirmed" component={DeleteConfirmed}/>
       <Stack.Screen name="RequestSentConfirmed" component={RequestSentConfirmed}/>
+      <Stack.Screen name="AddJsaForm" component={AddJsaForm}/>
+      <Stack.Screen name="AddInvoiceForm" component={AddInvoiceForm}/>
     </Stack.Navigator>
   );
 };

@@ -4,8 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../../../store/themeSlice';
 import Card from '../../../components/Card';
-import { Dropdown, MultiSelect, dropdwon } from 'react-native-element-dropdown';
-import { isDraft } from '@reduxjs/toolkit';
+import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
 
 
 const styles = StyleSheet.create({
@@ -163,10 +162,6 @@ const styles = StyleSheet.create({
         height: 22,
         width: 22,
         marginLeft: 10,
-    },
-    dropdownArrow: {
-        height: 24,
-        width: 24,
     },
 });
 

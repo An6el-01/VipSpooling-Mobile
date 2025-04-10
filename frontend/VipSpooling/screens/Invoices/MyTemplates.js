@@ -220,6 +220,20 @@ const MyTemplates = () => {
         }
     };
 
+    const handleTemplatePress = (template) => {
+        // Convert template name to lowercase for case-insensitive comparison
+        const templateName = template.name.toLowerCase();
+        
+        if (templateName.includes('jsa')) {
+            navigation.navigate('AddJsaForm');
+        } else if (templateName.includes('invoice')) {
+            navigation.navigate('AddInvoiceForm');
+        } else {
+            // Handle other template types here
+            console.log('Selected template:', template);
+        }
+    };
+
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -297,10 +311,7 @@ const MyTemplates = () => {
                                     <TouchableOpacity 
                                         key={template.id} 
                                         style={styles.templateItem}
-                                        onPress={() => {
-                                            // Handle template selection
-                                            console.log('Selected template:', template);
-                                        }}
+                                        onPress={() => handleTemplatePress(template)}
                                     >
                                         <Image
                                             source={getTemplateImage(template.name)}
