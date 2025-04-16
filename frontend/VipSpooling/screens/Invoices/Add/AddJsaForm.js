@@ -420,7 +420,7 @@ const AddJsaForm = () => {
                                         </View>
 
                                          {/* Order Date Input */}
-                                         <View style={[styles.fieldContainer, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', borderRadius: 12 }]}>
+                                         <View style={styles.fieldContainer}>
                                             <Text style={[styles.dateFieldText, {color: isDarkMode ? '#fff' : '#000' }]}>
                                                 Order Date:
                                             </Text>

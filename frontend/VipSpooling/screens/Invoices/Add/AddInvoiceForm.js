@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../../../store/themeSlice';
@@ -19,6 +19,12 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         flexGrow: 1,
+        width: '100%',
+    },
+    contentContainer: {
+        flexGrow: 1,
+        width: '100%',
+        alignItems: 'center',
     },
     header: {
         flexDirection: 'row',
@@ -80,18 +86,30 @@ const styles = StyleSheet.create({
         borderWidth: 1.3,
         backgroundColor: '#EAE7E7',
     },
+    inputNotesField: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        paddingVertical: 14,
+        marginBottom: 22,
+        width: '100%',
+        height: 100,
+        borderWidth: 1.3,
+        backgroundColor: '#EAE7E7',
+    },
     inputText: {
         color: '#000',
         fontSize: 16,
         flex: 1,
+        textAlignVertical: 'top',
     },
     dropdownContainer: {
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 6,
         backgroundColor: '#fff',
-        marginBottom: 8,
-        height: 50,
+        marginBottom: 15,
     },
     picker: {
         height: 50,
@@ -112,7 +130,7 @@ const styles = StyleSheet.create({
     laborSectionTitle: {
         fontSize: 18,
         fontWeight: '700',
-        marginBottom: 15,
+        marginBottom: 20,
         color: '#000',
     },
     laborRow: {
@@ -125,7 +143,7 @@ const styles = StyleSheet.create({
     },
     laborLabel: {
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '400',
         color: '#000',
         flex: 1,
     },
@@ -137,12 +155,7 @@ const styles = StyleSheet.create({
     laborInputWrapper: {
         flex: 1,
     },
-    laborInputLabel: {
-        fontSize: 12,
-        color: '#666',
-        marginBottom: 4,
-        textAlign: 'center',
-    },
+
     laborInput: {
         borderWidth: 1,
         borderColor: '#E0E0E0',
@@ -164,6 +177,7 @@ const styles = StyleSheet.create({
     },
     mainJobTypeContainer: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         marginBottom: 15,
         alignItems: 'center',
     },
@@ -229,44 +243,28 @@ const styles = StyleSheet.create({
         color: '#000',
         textAlign: 'center',
         textTransform: 'uppercase',
+
     },
-    consumablesHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-        paddingBottom: 8,
-    },
-    consumableHeaderText: {
+    itemLabel: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#000',
-        textAlign: 'center',
+        marginBottom: 8,
     },
-    consumableRow: {
+    consumableInputsRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-        backgroundColor: '#f5f5f5',
-        padding: 8,
-        borderRadius: 6,
+        marginBottom: 15,
+        gap: 8,
     },
-    consumableItemContainer: {
-        flex: 2,
-        marginRight: 8,
-    },
-    otherInput: {
+    inputColumn: {
         flex: 1,
-        height: 40,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 6,
-        paddingHorizontal: 8,
-        marginTop: 4,
-        backgroundColor: '#fff',
+    },
+    columnLabel: {
+        textAlign: 'center',
+        padding: 5,
+        fontSize: 12,
+        color: '#000',
+        marginBottom: 4,
     },
     consumableInput: {
         height: 40,
@@ -276,19 +274,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         backgroundColor: '#fff',
         textAlign: 'center',
-        marginHorizontal: 4,
     },
     addRowButton: {
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',
-        marginTop: 10,
-        backgroundColor: '#007AFF',
+        backgroundColor: '#ddd',
     },
     addRowButtonText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#fff',
+        color: '#000',
     },
     finishButton: {
         backgroundColor: '#FFD700',
@@ -313,6 +309,133 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         letterSpacing: 0.5,
     },
+    modalView: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    pickerWindow: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+        width: '80%',
+        maxHeight: '70%',
+    },
+    pickerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+        paddingBottom: 10,
+    },
+    pickerTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    closeButton: {
+        padding: 5,
+    },
+    closeButtonText: {
+        fontSize: 16,
+        color: '#007AFF',
+    },
+    itemButton: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    itemButtonText: {
+        fontSize: 16,
+    },
+    selectedItemText: {
+        padding: 10,
+        fontSize: 16,
+        color: '#000',
+    },
+    dropdownTrigger: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 6,
+        backgroundColor: '#fff',
+        padding: 10,
+        marginBottom: 15,
+    },
+    dropdownArrow: {
+        fontSize: 18,
+        color: '#666',
+    },
+    consumableRowContainer: {
+        marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+    },
+    consumableRowHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    removeRowButton: {
+        padding: 8,
+        bottom:10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    removeRowButtonText: {
+        color: '#FF3B30',
+        fontSize: 20,
+        fontWeight: '600',
+    },
+    dateFieldText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#000',
+        flex: 1,
+    },
+    dateContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+        marginTop: 10,
+    },
+    datePickerContainer: {
+        borderRadius: 8,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        flex: 1,
+    },
+    customInputContainer: {
+        padding: 15,
+    },
+    customItemInput: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        marginBottom: 15,
+        backgroundColor: '#fff',
+        color: '#000',
+    },
+    submitButton: {
+        backgroundColor: '#FFD700',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#000',
+    },
+    submitButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#000',
+    },
 });
 
 const AddInvoiceForm = () => {
@@ -320,6 +443,7 @@ const AddInvoiceForm = () => {
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
     const dispatch = useDispatch();
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [totalAmount, setTotalAmount] = useState(0);
     const [formDate, setFormDate] = useState(new Date());
     const [formattedDate, setFormattedDate] = useState('');
     const [laborCosts, setLaborCosts] = useState({
@@ -340,9 +464,14 @@ const AddInvoiceForm = () => {
     });
 
     // Add consumables state
-    const [consumables, setConsumables] = useState([
-        { item: '', qty: '', rate: '', amount: '', isOther: false, otherText: '' }
+    const [nextRowId, setNextRowId] = useState(1);
+    const [consumableRows, setConsumableRows] = useState([
+        { id: 0, item: '', qty: '', rate: '', amount: '' }
     ]);
+    const [activePickerRow, setActivePickerRow] = useState(null);
+    const [customItemInput, setCustomItemInput] = useState('');
+    const [showCustomItemInput, setShowCustomItemInput] = useState(false);
+    const [extraCharges, setExtraCharges] = useState('');
 
     const consumableItems = [
         'Mileage',
@@ -376,6 +505,8 @@ const AddInvoiceForm = () => {
     ? require('../../../assets/DarkMode.jpg')
     : require('../../../assets/LightMode.jpg')
 
+    const [isPickerVisible, setPickerVisible] = useState(false);
+
     const onDateChange = (event, selectedDate) => {
         setShowDatePicker(Platform.OS === 'ios');
         if (selectedDate) {
@@ -406,40 +537,105 @@ const AddInvoiceForm = () => {
         setLaborCosts(newLaborCosts);
     };
 
-    const updateConsumable = (index, field, value) => {
-        const newConsumables = [...consumables];
-        newConsumables[index][field] = value;
+    const updateConsumable = (rowId, field, value) => {
+        setConsumableRows(currentRows => {
+            return currentRows.map(row => {
+                if (row.id === rowId) {
+                    const updatedRow = { ...row, [field]: value };
+                    
+                    // Calculate amount if both rate and qty are present
+                    if (field === 'rate' || field === 'qty') {
+                        const rate = field === 'rate' ? parseFloat(value) : parseFloat(row.rate);
+                        const qty = field === 'qty' ? parseFloat(value) : parseFloat(row.qty);
+                        
+                        if (!isNaN(rate) && !isNaN(qty)) {
+                            updatedRow.amount = (rate * qty).toFixed(2);
+                        }
+                    }
 
-        if (field === 'item') {
-            newConsumables[index].isOther = value === 'Other';
-            if (!newConsumables[index].isOther) {
-                newConsumables[index].otherText = '';
-            }
+                    // If selecting "Other", show custom input modal
+                    if (field === 'item' && value === 'Other') {
+                        setActivePickerRow(rowId);
+                        setShowCustomItemInput(true);
+                    }
+                    
+                    return updatedRow;
+                }
+                return row;
+            });
+        });
+    };
+
+    const handleCustomItemSubmit = () => {
+        if (customItemInput.trim()) {
+            setConsumableRows(currentRows => {
+                return currentRows.map(row => {
+                    if (row.id === activePickerRow) {
+                        return { ...row, item: customItemInput.trim() };
+                    }
+                    return row;
+                });
+            });
+            setCustomItemInput('');
+            setShowCustomItemInput(false);
         }
-
-        if (field === 'rate' || field === 'qty') {
-            const rate = field === 'rate' ? parseFloat(value) : parseFloat(newConsumables[index].rate);
-            const qty = field === 'qty' ? parseFloat(value) : parseFloat(newConsumables[index].qty);
-            
-            if (!isNaN(rate) && !isNaN(qty)) {
-                newConsumables[index].amount = (rate * qty).toFixed(2);
-            }
-        }
-
-        setConsumables(newConsumables);
     };
 
     const addConsumableRow = () => {
-        setConsumables([...consumables, { item: '', qty: '', rate: '', amount: '', isOther: false, otherText: '' }]);
+        const newRow = {
+            id: nextRowId,
+            item: '',
+            qty: '',
+            rate: '',
+            amount: ''
+        };
+        setNextRowId(prevId => prevId + 1);
+        setConsumableRows(prevRows => [...prevRows, newRow]);
     };
+
+    const removeConsumableRow = (rowId) => {
+        setConsumableRows(currentRows => currentRows.filter(row => row.id !== rowId));
+    };
+
+    // Calculate total amount whenever relevant values change
+    useEffect(() => {
+        const calculateTotal = () => {
+            // Sum up labor costs
+            const laborTotal = Object.values(laborCosts).reduce((sum, item) => {
+                const amount = parseFloat(item.amount) || 0;
+                return sum + amount;
+            }, 0);
+
+            // Sum up consumables
+            const consumablesTotal = consumableRows.reduce((sum, row) => {
+                const amount = parseFloat(row.amount) || 0;
+                return sum + amount;
+            }, 0);
+
+            // Add extra charges
+            const extraChargesAmount = parseFloat(extraCharges) || 0;
+
+            // Calculate final total
+            const finalTotal = laborTotal + consumablesTotal + extraChargesAmount;
+            
+            // Update total amount state with 2 decimal places
+            setTotalAmount(finalTotal.toFixed(2));
+        };
+
+        calculateTotal();
+    }, [laborCosts, consumableRows, extraCharges]);
 
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
             <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
                 <ScrollView
-                    contentContainerStyle={{ flexGrow: 1 }}
+                    contentContainerStyle={styles.contentContainer}
+                    style={styles.scrollContainer}
                     keyboardShouldPersistTaps="handled"
                     bounces={false}
+                    showsVerticalScrollIndicator={true}
+                    persistentScrollbar={true}
+                    overScrollMode="never"
                 >
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.container}>
@@ -474,21 +670,23 @@ const AddInvoiceForm = () => {
                                 <View style={styles.cardContainerContent}>
 
                                 {/* Order Date Input */}
-                                <View style={[styles.fieldContainer, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', borderRadius: 12 }]}>
+                                <View style={styles.dateContainer}>
                                     <Text style={[styles.dateFieldText, {color: isDarkMode ? '#fff' : '#000'}]}>
                                         Invoice Date:
                                     </Text>
-                                    <DateTimePicker
-                                        testID="dateTimePicker"
-                                        value={formDate}
-                                        mode="date"
-                                        display={Platform.OS === 'ios' ? 'compact' : 'default'}
-                                        onChange={onDateChange}
-                                        style={{ width: '50%' }}
-                                        textColor={isDarkMode ? '#fff' : '#000'}
-                                        themeVariant={isDarkMode ? 'dark' : 'light'}
-                                        accessibilityLabel="Date picker"
-                                    />
+                                    <View style={styles.datePickerContainer}>
+                                        <DateTimePicker
+                                            testID="dateTimePicker"
+                                            value={formDate}
+                                            mode="date"
+                                            display={Platform.OS === 'ios' ? 'compact' : 'default'}
+                                            onChange={onDateChange}
+                                            style={{ width: '100%' }}
+                                            textColor={isDarkMode ? '#fff' : '#000'}
+                                            themeVariant={isDarkMode ? 'dark' : 'light'}
+                                            accessibilityLabel="Date picker"
+                                        />
+                                    </View>
                                 </View>
 
                                 {/** Spooler Input */}
@@ -500,7 +698,7 @@ const AddInvoiceForm = () => {
                                         <TextInput
                                             style={styles.inputText}
                                             placeholder="Enter Spooler Name"
-                                            placeholderTextColor={isDarkMode ? '#fff' : '#000'}
+                                            placeholderTextColor={'#000'}
                                         />
                                     </View>
                                 </View>
@@ -514,7 +712,7 @@ const AddInvoiceForm = () => {
                                         <TextInput
                                             style={styles.inputText}
                                             placeholder='Enter Work Type'
-                                            placeholderTextColor={isDarkMode ? '#fff' : '#000'}
+                                            placeholderTextColor={'#000'}
                                         />
                                     </View>
                                 </View>
@@ -528,7 +726,7 @@ const AddInvoiceForm = () => {
                                         <TextInput
                                             style={styles.inputText}
                                             placeholder='Enter Cable Company'
-                                            placeholderTextColor={isDarkMode ? '#fff' : '#000'}
+                                            placeholderTextColor={'#000'}
                                         />
                                     </View>
                                 </View>
@@ -542,7 +740,7 @@ const AddInvoiceForm = () => {
                                         <TextInput
                                             style={styles.inputText}
                                             placeholder='Enter Oil Company'
-                                            placeholderTextColor={isDarkMode ? '#fff' : '#000'}
+                                            placeholderTextColor={'#000'}
                                         />
                                     </View>
                                 </View>
@@ -556,7 +754,7 @@ const AddInvoiceForm = () => {
                                         <TextInput
                                             style={styles.inputText}
                                             placeholder='Enter Well Number'
-                                            placeholderTextColor={isDarkMode ? '#fff' : '#000'}
+                                            placeholderTextColor={'#000'}
                                             keyboardType='numeric'
                                         />
                                     </View>
@@ -571,7 +769,7 @@ const AddInvoiceForm = () => {
                                         <TextInput
                                             style={styles.inputText}
                                             placeholder='Enter Well Name'
-                                            placeholderTextColor={isDarkMode ? '#fff' : '#000'}
+                                            placeholderTextColor={'#000'}
                                         />
                                     </View>
                                 </View>
@@ -582,25 +780,6 @@ const AddInvoiceForm = () => {
                                         Labor Costs
                                     </Text>
 
-                                    {/* Headers */}
-                                    <View style={styles.laborInputsContainer}>
-                                        <View style={styles.laborInputWrapper}>
-                                            <Text style={[styles.laborInputLabel, { color: isDarkMode ? '#fff' : '#666' }]}>
-                                                Rate
-                                            </Text>
-                                        </View>
-                                        <View style={styles.laborInputWrapper}>
-                                            <Text style={[styles.laborInputLabel, { color: isDarkMode ? '#fff' : '#666' }]}>
-                                                QTY
-                                            </Text>
-                                        </View>
-                                        <View style={styles.laborInputWrapper}>
-                                            <Text style={[styles.laborInputLabel, { color: isDarkMode ? '#fff' : '#666' }]}>
-                                                Amount
-                                            </Text>
-                                        </View>
-                                    </View>
-
                                     {/* Load/Unload */}
                                     <View style={styles.laborRow}>
                                         <View style={styles.laborRowHeader}>
@@ -610,18 +789,24 @@ const AddInvoiceForm = () => {
                                         </View>
                                         <View style={styles.laborInputsContainer}>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Rate
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
-                                                    placeholder="0.00"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                     value={laborCosts.loadUnload.rate}
                                                     onChangeText={(value) => updateLaborCost('loadUnload', 'rate', value)}
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        QTY
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
                                                     placeholder="Hours:"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
@@ -630,11 +815,14 @@ const AddInvoiceForm = () => {
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Amount
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     editable={false}
                                                     value={laborCosts.loadUnload.amount}
-                                                    placeholder="Total:"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                 />
                                             </View>
@@ -650,18 +838,24 @@ const AddInvoiceForm = () => {
                                         </View>
                                         <View style={styles.laborInputsContainer}>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Rate
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
-                                                    placeholder="0.00"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                     value={laborCosts.spoolerMiles.rate}
                                                     onChangeText={(value) => updateLaborCost('spoolerMiles', 'rate', value)}
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        QTY
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
                                                     placeholder="Miles:"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
@@ -670,11 +864,14 @@ const AddInvoiceForm = () => {
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Amount
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     editable={false}
                                                     value={laborCosts.spoolerMiles.amount}
-                                                    placeholder="Total:"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                 />
                                             </View>
@@ -690,18 +887,24 @@ const AddInvoiceForm = () => {
                                         </View>
                                         <View style={styles.laborInputsContainer}>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Rate
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
-                                                    placeholder="0.00"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                     value={laborCosts.travelTime.rate}
                                                     onChangeText={(value) => updateLaborCost('travelTime', 'rate', value)}
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        QTY
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
                                                     placeholder="Hours:"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
@@ -710,11 +913,14 @@ const AddInvoiceForm = () => {
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Amount
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     editable={false}
                                                     value={laborCosts.travelTime.amount}
-                                                    placeholder="Total:"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                 />
                                             </View>
@@ -730,18 +936,24 @@ const AddInvoiceForm = () => {
                                         </View>
                                         <View style={styles.laborInputsContainer}>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Rate
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
-                                                    placeholder="0.00"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                     value={laborCosts.standbyTime.rate}
                                                     onChangeText={(value) => updateLaborCost('standbyTime', 'rate', value)}
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        QTY
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
                                                     placeholder="Hours:"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
@@ -750,11 +962,14 @@ const AddInvoiceForm = () => {
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Amount
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     editable={false}
                                                     value={laborCosts.standbyTime.amount}
-                                                    placeholder="Total:"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                 />
                                             </View>
@@ -770,18 +985,24 @@ const AddInvoiceForm = () => {
                                         </View>
                                         <View style={styles.laborInputsContainer}>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Rate
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
-                                                    placeholder="0.00"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                     value={laborCosts.spoolerLabor.rate}
                                                     onChangeText={(value) => updateLaborCost('spoolerLabor', 'rate', value)}
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        QTY
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     keyboardType="decimal-pad"
                                                     placeholder="Hours:"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
@@ -790,11 +1011,14 @@ const AddInvoiceForm = () => {
                                                 />
                                             </View>
                                             <View style={styles.laborInputWrapper}>
+                                            <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Amount
+                                            </Text>
                                                 <TextInput
-                                                    style={[styles.laborInput, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.laborInput, { color: '#000' }]}
                                                     editable={false}
                                                     value={laborCosts.spoolerLabor.amount}
-                                                    placeholder="Total:"
+                                                    placeholder="$0.00"
                                                     placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
                                                 />
                                             </View>
@@ -1013,72 +1237,166 @@ const AddInvoiceForm = () => {
                                         Consumables
                                     </Text>
 
-                                    {/* Headers */}
-                                    <View style={styles.consumablesHeader}>
-                                        <Text style={[styles.consumableHeaderText, { color: isDarkMode ? '#fff' : '#000', flex: 2 }]}>Item</Text>
-                                        <Text style={[styles.consumableHeaderText, { color: isDarkMode ? '#fff' : '#000', flex: 1 }]}>Qty</Text>
-                                        <Text style={[styles.consumableHeaderText, { color: isDarkMode ? '#fff' : '#000', flex: 1 }]}>Rate</Text>
-                                        <Text style={[styles.consumableHeaderText, { color: isDarkMode ? '#fff' : '#000', flex: 1 }]}>Amount</Text>
-                                    </View>
-
-                                    {/* Consumable Rows */}
-                                    {consumables.map((consumable, index) => (
-                                        <View key={index} style={styles.consumableRow}>
-                                            <View style={[styles.consumableItemContainer]}>
-                                                <View style={styles.dropdownContainer}>
-                                                    <Picker
-                                                        selectedValue={consumable.item}
-                                                        onValueChange={(value) => updateConsumable(index, 'item', value)}
-                                                        style={styles.picker}
-                                                        itemStyle={{ height: 50 }}
+                                    {consumableRows.map((row) => (
+                                        <View key={row.id} style={styles.consumableRowContainer}>
+                                            <View style={styles.consumableRowHeader}>
+                                                <Text style={[styles.itemLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                    Item:
+                                                </Text>
+                                                {consumableRows.length > 1 && (
+                                                    <TouchableOpacity 
+                                                        onPress={() => removeConsumableRow(row.id)}
+                                                        style={styles.removeRowButton}
                                                     >
-                                                        <Picker.Item label="Select Item" value="" />
-                                                        {consumableItems.map((item) => (
-                                                            <Picker.Item 
-                                                                key={item} 
-                                                                label={item} 
-                                                                value={item}
-                                                            />
-                                                        ))}
-                                                    </Picker>
-                                                </View>
-                                                {consumable.isOther && (
-                                                    <TextInput
-                                                        style={[styles.otherInput, { color: isDarkMode ? '#fff' : '#000' }]}
-                                                        placeholder="Enter custom item"
-                                                        placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
-                                                        value={consumable.otherText}
-                                                        onChangeText={(value) => updateConsumable(index, 'otherText', value)}
-                                                    />
+                                                    <Text style={styles.removeRowButtonText}>×</Text>
+                                                    </TouchableOpacity>
                                                 )}
                                             </View>
-                                            <TextInput
-                                                style={[styles.consumableInput, { flex: 1 }]}
-                                                keyboardType="decimal-pad"
-                                                placeholder="0"
-                                                placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
-                                                value={consumable.qty}
-                                                onChangeText={(value) => updateConsumable(index, 'qty', value)}
-                                            />
-                                            <TextInput
-                                                style={[styles.consumableInput, { flex: 1 }]}
-                                                keyboardType="decimal-pad"
-                                                placeholder="0.00"
-                                                placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
-                                                value={consumable.rate}
-                                                onChangeText={(value) => updateConsumable(index, 'rate', value)}
-                                            />
-                                            <TextInput
-                                                style={[styles.consumableInput, { flex: 1 }]}
-                                                editable={false}
-                                                value={consumable.amount}
-                                                placeholder="0.00"
-                                                placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
-                                            />
+
+                                            <TouchableOpacity 
+                                                style={styles.dropdownTrigger}
+                                                onPress={() => {
+                                                    setActivePickerRow(row.id);
+                                                    setPickerVisible(true);
+                                                }}
+                                            >
+                                                <Text style={styles.selectedItemText}>
+                                                    {row.item || 'Select Item'}
+                                                </Text>
+                                                <Text style={styles.dropdownArrow}>▼</Text>
+                                            </TouchableOpacity>
+
+                                            <View style={styles.consumableInputsRow}>
+                                                <View style={styles.inputColumn}>
+                                                    <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        QTY
+                                                    </Text>
+                                                    <TextInput
+                                                        style={[styles.consumableInput, { color: '#000' }]}
+                                                        keyboardType="decimal-pad"
+                                                        placeholder="0"
+                                                        placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
+                                                        value={row.qty}
+                                                        onChangeText={(value) => updateConsumable(row.id, 'qty', value)}
+                                                    />
+                                                </View>
+                                                <View style={styles.inputColumn}>
+                                                    <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Rate
+                                                    </Text>
+                                                    <TextInput
+                                                        style={[styles.consumableInput, { color: '#000' }]}
+                                                        keyboardType="decimal-pad"
+                                                        placeholder="$0.00"
+                                                        placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
+                                                        value={row.rate}
+                                                        onChangeText={(value) => updateConsumable(row.id, 'rate', value)}
+                                                    />
+                                                </View>
+                                                <View style={styles.inputColumn}>
+                                                    <Text style={[styles.columnLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                        Amount
+                                                    </Text>
+                                                    <TextInput
+                                                        style={[styles.consumableInput, { color: '#000' }]}
+                                                        editable={false}
+                                                        placeholder="$0.00"
+                                                        placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
+                                                        value={row.amount}
+                                                    />
+                                                </View>
+                                            </View>
                                         </View>
                                     ))}
 
-                                    {/* Add Row Button */}
+                                    <Modal
+                                        visible={isPickerVisible}
+                                        transparent={true}
+                                        animationType="fade"
+                                        onRequestClose={() => setPickerVisible(false)}
+                                    >
+                                        <TouchableWithoutFeedback onPress={() => setPickerVisible(false)}>
+                                            <View style={styles.modalView}>
+                                                <TouchableWithoutFeedback>
+                                                    <View style={styles.pickerWindow}>
+                                                        <View style={styles.pickerHeader}>
+                                                            <Text style={styles.pickerTitle}>Select Item</Text>
+                                                            <TouchableOpacity 
+                                                                style={styles.closeButton}
+                                                                onPress={() => setPickerVisible(false)}
+                                                            >
+                                                                <Text style={styles.closeButtonText}>Done</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                        <ScrollView>
+                                                            {consumableItems.map((item) => (
+                                                                <TouchableOpacity
+                                                                    key={item}
+                                                                    style={styles.itemButton}
+                                                                    onPress={() => {
+                                                                        updateConsumable(activePickerRow, 'item', item);
+                                                                        setPickerVisible(false);
+                                                                    }}
+                                                                >
+                                                                    <Text style={[
+                                                                        styles.itemButtonText,
+                                                                        consumableRows.find(row => row.id === activePickerRow)?.item === item && { fontWeight: '600' }
+                                                                    ]}>
+                                                                        {item}
+                                                                    </Text>
+                                                                </TouchableOpacity>
+                                                            ))}
+                                                        </ScrollView>
+                                                    </View>
+                                                </TouchableWithoutFeedback>
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </Modal>
+
+                                    <Modal
+                                        visible={showCustomItemInput}
+                                        transparent={true}
+                                        animationType="fade"
+                                        onRequestClose={() => setShowCustomItemInput(false)}
+                                    >
+                                        <TouchableWithoutFeedback onPress={() => setShowCustomItemInput(false)}>
+                                            <View style={styles.modalView}>
+                                                <TouchableWithoutFeedback>
+                                                    <View style={styles.pickerWindow}>
+                                                        <View style={styles.pickerHeader}>
+                                                            <Text style={styles.pickerTitle}>Enter Custom Item</Text>
+                                                            <TouchableOpacity 
+                                                                style={styles.closeButton}
+                                                                onPress={() => setShowCustomItemInput(false)}
+                                                            >
+                                                                <Text style={styles.closeButtonText}>Cancel</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                        <View style={styles.customInputContainer}>
+                                                            <TextInput
+                                                                style={styles.customItemInput}
+                                                                value={customItemInput}
+                                                                onChangeText={setCustomItemInput}
+                                                                placeholder="Enter custom item name"
+                                                                placeholderTextColor="#666"
+                                                            />
+                                                            <TouchableOpacity
+                                                                style={[
+                                                                    styles.submitButton,
+                                                                    { opacity: customItemInput.trim() ? 1 : 0.5 }
+                                                                ]}
+                                                                onPress={handleCustomItemSubmit}
+                                                                disabled={!customItemInput.trim()}
+                                                            >
+                                                                <Text style={styles.submitButtonText}>Submit</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    </View>
+                                                </TouchableWithoutFeedback>
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </Modal>
+
                                     <TouchableOpacity
                                         style={[styles.addRowButton, { backgroundColor: isDarkMode ? '#444' : '#ddd' }]}
                                         onPress={addConsumableRow}
@@ -1094,11 +1412,14 @@ const AddInvoiceForm = () => {
                                     <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>
                                         Notes:
                                     </Text>
-                                    <View style={styles.inputField}>
+                                    <View style={styles.inputNotesField}>
                                         <TextInput
-                                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000'}]}
+                                            style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000'}]}
                                             placeholder="Enter notes"
-                                            placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
+                                            placeholderTextColor={'#000'}
+                                            multiline={true}
+                                            numberOfLines={4}
+                                            textAlignVertical="top"
                                         />
                                     </View>
                                 </View>
@@ -1110,10 +1431,10 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <View style={styles.inputField}>
                                         <TextInput
-                                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000'}]}
+                                            style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000'}]}
                                             keyboardType='numeric'
                                             placeholder='Enter Cable Length'
-                                            placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
+                                            placeholderTextColor={'#000'}
                                         />
                                     </View>
                                 </View>
@@ -1125,9 +1446,9 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <View style={styles.inputField}>
                                         <TextInput
-                                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000'}]}
+                                            style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000'}]}
                                             placeholder='Enter Cable Type'
-                                            placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
+                                            placeholderTextColor={'#000'}
                                         />
                                     </View>
                                 </View>
@@ -1139,9 +1460,9 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <View style={styles.inputField}>
                                         <TextInput
-                                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000'}]}
+                                            style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000'}]}
                                             placeholder='Enter Reel Number'
-                                            placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
+                                            placeholderTextColor={'#000'}
                                             keyboardType='numeric'
                                         />
                                     </View>
@@ -1154,10 +1475,12 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <View style={styles.inputField}>
                                         <TextInput
-                                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000'}]}
+                                            style={[styles.inputText, { color: '#000'}]}
                                             placeholder='Enter Extra Charges'
-                                            placeholderTextColor={isDarkMode ? '#666' : '#aaa'}
+                                            placeholderTextColor={'#000'}
                                             keyboardType='numeric'
+                                            value={extraCharges}
+                                            onChangeText={setExtraCharges}
                                         />
                                     </View>
                                 </View>
@@ -1169,14 +1492,17 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <View style={styles.inputField}>
                                         <TextInput
-                                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000'}]}
-                                            editable={false}  
+                                            style={[styles.inputText, { color: '#000'}]}
+                                            editable={false}
+                                            value={`$${totalAmount}`}
+                                            placeholder="$0.00"
+                                            placeholderTextColor={'#000'}
                                         />
                                     </View>
                                 </View>
 
                                 <TouchableOpacity
-                                style={[styles.finishButton, { borderColor: isDarkMode ? '#fff' : '#000' }]}
+                                style={[styles.finishButton, { borderColor: '#000' }]}
                                 onPress={() => {
                                     // Add your finish form logic here
                                     console.log('Finishing Invoice Form...');

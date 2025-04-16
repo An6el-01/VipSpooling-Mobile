@@ -262,19 +262,7 @@ const EditProfile = () => {
                         </View>
                         <Image source={require('../assets/right-arrow.png')} style={[styles.logoutIcon, { tintColor: '#B0AEAE'}]} />
                     </TouchableOpacity>
-                    <View style={styles.row}>
-                        <View style={styles.labelContainer}>
-                            <Image source={require('../assets/notifications.png')} style={[styles.cardIcon, {tintColor: '#B0AEAE'}]} />
-                            <Text style={[styles.label, {color: '#B0AEAE'}]}>Push Notifications</Text>
-                        </View>
-                        <Switch
-                            value={pushNotifications}
-                            onValueChange={() => setPushNotifications(!pushNotifications)}
-                            trackColor={{ false: '#ccc', true: '#ccc' }}
-                            thumbColor={pushNotifications ? '#fff' : '#f4f3f4'}
-                            style={{ transform: [{ scaleX: 0.7}, {scaleY: 0.7}], left: 12}}
-                        />
-                    </View>
+                    
                     <TouchableOpacity style={styles.lastRow}>
                         <View style={styles.labelContainer}>
                             <Image source={require('../assets/logout.png')} style={styles.logoutIcon} />

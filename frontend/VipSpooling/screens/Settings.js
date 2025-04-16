@@ -317,19 +317,7 @@ const Settings = () => {
                         </View>
                         <Image source={require('../assets/right-arrow.png')} style={[styles.logoutIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]} />
                     </TouchableOpacity>
-                    <View style={styles.row}>
-                        <View style={styles.labelContainer}>
-                            <Image source={require('../assets/notifications.png')} style={[styles.cardIcon, {tintColor: isDarkMode ? '#fff' : '#000'}]} />
-                            <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Push Notifications</Text>
-                        </View>
-                        <Switch
-                            value={pushNotifications}
-                            onValueChange={() => setPushNotifications(!pushNotifications)}
-                            trackColor={{ false: '#ccc', true: '#3ec951' }}
-                            thumbColor={pushNotifications ? '#fff' : '#f4f3f4'}
-                            style={{ transform: [{ scaleX: 0.7}, {scaleY: 0.7}], left: 12}}
-                        />
-                    </View>
+                    
                     <TouchableOpacity style={styles.lastRow} onPress={handleLogout}>
                         <View style={styles.labelContainer}>
                             <Image source={require('../assets/logout.png')} style={styles.logoutIcon} />
