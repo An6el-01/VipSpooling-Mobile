@@ -6,6 +6,7 @@ import { toggleTheme } from '../../../store/themeSlice';
 import Card from '../../../components/Card';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
+import { Auth } from 'aws-amplify';
 
 const styles = StyleSheet.create({
     background: {
@@ -446,6 +447,7 @@ const AddInvoiceForm = () => {
     const [totalAmount, setTotalAmount] = useState(0);
     const [formDate, setFormDate] = useState(new Date());
     const [formattedDate, setFormattedDate] = useState('');
+    const [spoolerName, setSpoolerName] = useState('');
     const [laborCosts, setLaborCosts] = useState({
         loadUnload: { rate: '', qty: '', amount: '' },
         spoolerMiles: { rate: '', qty: '', amount: '' },
@@ -625,6 +627,20 @@ const AddInvoiceForm = () => {
         calculateTotal();
     }, [laborCosts, consumableRows, extraCharges]);
 
+    useEffect(() => {
+        fetchCurrentUser();
+    }, []);
+
+    const fetchCurrentUser = async () => {
+        try {
+            const user = await Auth.currentAuthenticatedUser();
+            const { attributes } = user;
+            setSpoolerName(attributes.name || '');
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+        }
+    };
+
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
             <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
@@ -699,6 +715,9 @@ const AddInvoiceForm = () => {
                                             style={styles.inputText}
                                             placeholder="Enter Spooler Name"
                                             placeholderTextColor={'#000'}
+                                            value={spoolerName}
+                                            editable={false}
+                                            onChangeText={setSpoolerName}
                                         />
                                     </View>
                                 </View>

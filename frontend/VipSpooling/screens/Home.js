@@ -106,6 +106,9 @@ const styles = StyleSheet.create({
     height: 30,
     tintColor: '#000',
   },
+  cardContainer: {
+    height: 410,
+},
 });
 
 const Dashboard = () => {
@@ -177,8 +180,8 @@ const Dashboard = () => {
           ADD IN LINE STYLING
             - Make the Invoice stretch across the entire Card
         */}
-          <Card isDarkMode={isDarkMode} style={{padding: 8}}>
-            {[1, 2, 3, 4, 5].map((item, index) => (
+        <Card isDarkMode={isDarkMode} style={[{padding: 8}, styles.cardContainer]}>
+        {[1, 2, 3, 4, 5].map((item, index) => (
                 <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
                 <View style={styles.activityDetails}>
                     <Text style={[styles.activityText, {color: isDarkMode ? '#fff' : '#000'}]}>Invoice {item}</Text>

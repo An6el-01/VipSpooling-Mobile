@@ -154,19 +154,56 @@ const styles = StyleSheet.create({
         paddingHorizontal: 25,
         alignItems: 'center',  
         justifyContent: 'center',
-        width: '100%',  
+        width: '48%',  
         alignSelf: 'center',  
         shadowColor: '#000',  
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 3, 
-        marginBottom: 40,
     },
     deleteUserText: {
         fontSize: 14,
         fontWeight: 'bold',
         color: '#000',
+    },
+    buttonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 20,
+    },
+    confirmEditButton: {
+        backgroundColor: '#FFD700',
+        borderRadius: 12,
+        borderWidth: 1.3,
+        borderColor: '#000',
+        paddingVertical: 14,
+        paddingHorizontal: 25,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '48%',
+        alignSelf: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    confirmEditText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#000',
+    },
+    buttonIcon: {
+        width: 20,
+        height: 20,
+        marginRight: 10,
+    },
+    buttonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     modalContainer: {
         flex: 1,
@@ -212,13 +249,18 @@ const styles = StyleSheet.create({
     },
 });
 
-const EditTeamMember = () => {
+const EditTeamMember = ({ route }) => {
     const navigation = useNavigation();
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
     const dispatch = useDispatch();
-    const [role, setRole] = useState('');
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
+    
+    // Get user data from route params
+    const { user } = route.params;
+    
+    // Initialize state with user data
+    const [role, setRole] = useState(user?.groups?.join(', ') || '');
+    const [name, setName] = useState(user?.name || '');
+    const [email, setEmail] = useState(user?.email || '');
     const [modalVisible, setModalVisible] = useState(false);
 
     const backgroundImage = isDarkMode
@@ -296,10 +338,31 @@ const EditTeamMember = () => {
                         />
                     </View>
                 </Card>
-                {/**DELETE BUTTON*/}
+                {/* BUTTONS SECTION */}
+                <View style={styles.buttonsContainer}>
+
                 <TouchableOpacity style={styles.deleteUserButton} onPress={() => setModalVisible(true)}>
-                        <Text style={styles.deleteUserText}>Delete User</Text>
-                </TouchableOpacity>
+                        <View style={styles.buttonContent}>
+                            <Image 
+                                source={require('../../../assets/delete.png')}
+                                style={[styles.buttonIcon, { tintColor: '#000' }]}
+                            />
+                            <Text style={styles.deleteUserText}>Delete User</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.confirmEditButton}>
+                        <View style={styles.buttonContent}>
+                            <Image 
+                                source={require('../../../assets/save.png')}
+                                style={[styles.buttonIcon, { tintColor: '#000' }]}
+                            />
+                            <Text style={styles.confirmEditText}>Confirm Edit</Text>
+                        </View>
+                    </TouchableOpacity>
+                    
+                    
+                </View>
                 </View>
                 {/**CONFIRMATION MODAL*/}
                 <Modal

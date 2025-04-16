@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switch, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../store/themeSlice';
 import Card from '../components/Card';
+import { Auth } from 'aws-amplify';
 
 const styles = StyleSheet.create({
     background: {
@@ -174,6 +175,30 @@ const EditProfile = () => {
     const [role, setRole] = useState('');
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchUserInfo();
+    }, []);
+
+    const fetchUserInfo = async () => {
+        try {
+            const user = await Auth.currentAuthenticatedUser();
+            const { attributes } = user;
+            
+            // Get user's groups/roles
+            const session = await Auth.currentSession();
+            const groups = session.getAccessToken().payload['cognito:groups'] || [];
+            
+            setRole(groups.join(', '));
+            setName(attributes.name || '');
+            setEmail(attributes.email || '');
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+            setLoading(false);
+        }
+    };
 
     const backgroundImage = isDarkMode
         ? require('../assets/DarkMode.jpg')

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, TextInput, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, TextInput, TouchableWithoutFeedback, Keyboard, ActivityIndicator, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../../store/themeSlice';
@@ -71,6 +71,12 @@ const styles = StyleSheet.create({
     },
     activitySection: {
         marginTop: 20
+    },
+    cardContainer: {
+        height: 480,
+    },
+    cardContent: {
+        flex: 1,
     },
     activityCard: {
         flexDirection: 'row',
@@ -259,7 +265,11 @@ const MyTeam = () => {
                     </View>
                     {/*MY TEAM SECTION*/}
                     <View style={styles.activitySection}>
-                        <Card isDarkMode={isDarkMode} style={{padding: 8}}>
+                        <Card isDarkMode={isDarkMode} style={[{padding: 8}, styles.cardContainer]}>
+                            <ScrollView 
+                                style={styles.cardContent}
+                                showsVerticalScrollIndicator={true}
+                            >
                             {loading ? (
                                 <View style={styles.loadingContainer}>
                                     <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
@@ -290,7 +300,15 @@ const MyTeam = () => {
                                                 Roles: {user.groups?.join(', ') || 'No roles'}
                                             </Text>
                                         </View>
-                                        <TouchableOpacity onPress={() => {navigation.navigate('EditTeamMember', { user })}}>
+                                        <TouchableOpacity onPress={() => {
+                                            navigation.navigate('EditTeamMember', { 
+                                                user: {
+                                                    name: user.name,
+                                                    email: user.email,
+                                                    groups: user.groups
+                                                }
+                                            })
+                                        }}>
                                             <Image
                                                 source={require('../../assets/view.png')}
                                                 style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
@@ -299,6 +317,7 @@ const MyTeam = () => {
                                     </View>
                                 ))
                             )}
+                            </ScrollView>
                         </Card>
                         {/*FLOATING ADD BUTTON*/}
                         <TouchableOpacity
