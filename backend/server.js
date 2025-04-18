@@ -12,8 +12,11 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const path = require('path');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, DeleteCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 
 dotenv.config();
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -50,6 +53,18 @@ const s3Client = new S3Client({
     maxAttempts: 3
 });
 
+const dynamoDBClient = new DynamoDBClient({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+    maxAttempts: 3,
+});
+
+//DynamoDB Document Client for simplified operations
+const docClient= DynamoDBDocumentClient.from(dynamoDBClient)
+
 // Error handling middleware
 const errorHandler = (err, req, res, next) => {
     console.error('Error:', err);
@@ -76,6 +91,7 @@ const validateRequest = (schema) => {
         next();
     };
 };
+
 
 // Cache for S3 bucket names
 let bucketCache = null;
@@ -117,12 +133,22 @@ async function listBuckets() {
     }
 }
 
-// Try to load the schema, but don't fail if it's not found
+// Try to load verifyPassword schema, but don't fail if it's not found
 let verifyPasswordSchema;
 try {
     verifyPasswordSchema = require('./schemas/verifyPassword');
 } catch (error) {
     console.warn('Warning: verifyPassword schema not found. Password verification will be disabled.');
+}
+
+let { InvoiceFormSchema, JSAFormSchema } = {};
+try {
+    const dynamoDBSchemas = require('./schemas/dynamoDB');
+    InvoiceFormSchema = dynamoDBSchemas.InvoiceFormSchema;
+    JSAFormSchema = dynamoDBSchemas.JSAFormSchema;
+} catch (error) {
+    console.log("Error loading dynamoDBSchemas. Check: server.js or schemas/dynamoDB.js in Backend: ", error);
+    console.warn("DynamoDB schemas will not be available.");
 }
 
 // API Routes with improved error handling
@@ -317,6 +343,152 @@ app.get('/api/pricingplans', async (req, res) => {
     } catch (error) {
         console.error('Error fetching pricing plans:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Create a new Invoice Form in dynamoDB
+app.post('/api/dynamoDB/createInvoiceForm', validateRequest(InvoiceFormSchema), async (req, res, next) => {
+    try{
+        const { 
+            WorkTicketID,
+            CableCompanyLocation,
+            Consumables,
+            createdAt,
+            CustomerSignature,
+            InvoiceDate,
+            InvoiceTotal,
+            JobType,
+            LaborCosts,
+            OilCompany,
+            ReelNumber,
+            Spooler,
+            updatedAt,
+            WellNumberName,
+            WorkType,
+            _lastChangedAt,
+            _version,
+            _typename,
+        } = req.body;
+        const params = {
+            TableName: 'InvoiceForm-ghr672m57fd2re7tckfmfby2e4-dev',
+            Item:{
+                WorkTicketID,
+                CableCompanyLocation: CableCompanyLocation || '',
+                Consumables: Consumables || [],
+                createdAt: new Date().toISOString(),
+                CustomerSignature: CustomerSignature || '',
+                InvoiceDate: InvoiceDate || '',
+                InvoiceTotal: InvoiceTotal || 0,
+                JobType: JobType || [],
+                LaborCosts: LaborCosts || [],
+                OilCompany: OilCompany || '',
+                ReelNumber: ReelNumber || '',
+                Spooler: Spooler || '',
+                updatedAt: new Date().toISOString(),
+                WellNumberName: WellNumberName || '',
+                WorkType: WorkType || '',
+                _lastChangedAt: _lastChangedAt || '',
+                _version: _version || 0,
+                _typename: _typename || '',
+            }
+        };
+        await docClient.send(new PutCommand(params));
+        res.status(201).json({ message: 'Item created successfully', id});
+    } catch (error) {
+        console.log("Erro creating invoice form, check server.js (createInvoiceForm): ", error)
+        next(error);
+    }
+});
+
+// Get an Invoice Form by ID
+app.get('/api/dynamoDB/getAnInvoiceForm', async (req, res, next) => {
+    try{
+        const { WorkTickedID } = req.params;
+        const params = {
+            TableName: 'InvoiceForm-ghr672m57fd2re7tckfmfby2e4-dev',
+            Key: { WorkTicketID }
+        };
+        const { InvoiceForm } = await docClient.send(new GetCommand(params));
+        if (!InvoiceForm) {
+            return res.status(404).json({ error: 'Invoice Form not found' });
+        }
+        res.status(200).json(InvoiceForm);
+    } catch (error) {
+        console.log("Error getting Invoice Form, check server.js (getAnInvoiceForm): ", error)
+        next(error);
+    }
+});
+
+// Get all items from InvoiceForm Table
+app.get('/api/dynamoDB/getAllInvoiceForms', async (req, res, next) => {
+    try {
+        const { Items } = await docClient.send(new ScanCommand({
+            TableName: 'InvoiceForm-ghr672m57fd2re7tckfmfby2e4-dev',
+        }));
+
+        if (!Items) {
+            return res.status(404).json({
+                error: {
+                    message: 'No invoice forms found',
+                    code: 'NOT_FOUND'
+                }
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            count: Items.length,
+            data: Items
+        });
+    } catch (error) {
+        console.error("Error getting all Invoice Forms:", error);
+        next({
+            status: 500,
+            message: 'Failed to retrieve invoice forms',
+            code: 'DB_ERROR',
+            error: error.message
+        });
+    }
+});
+
+// Update an Invoice Form by ID
+app.put('/api/dynamoDB/updateInvoiceForm/:WorkTicketID', validateRequest(InvoiceFormSchema), async (req, res, next) => {
+    try{
+        const { WorkTicketID } = req.params;
+        const { data } = req.body;
+        const params = {
+            TableName: 'InvoiceForm-ghr672m57fd2re7tckfmfby2e4-dev',
+            Key: { WorkTicketID },
+            UpdateExpression: 'SET #data = :data, updatedAt = :updatedAt',
+            ExpressionAttributeNames: { '#data': 'data' },
+            ExpressionAttributeValues: {
+                ':data': data,
+                ':updatedAt': new Date().toISOString()
+            } ,
+            ReturnValues: 'ALL_NEW'
+        };
+        const { Attributes } = await docClient.send(new UpdateCommand(params));
+        res.status(200).json(Attributes);
+    }catch (error) {
+        console.log("Error updating Invoice Form, check server.js (updateInvoiceForm): ", error)
+        next(error);
+    }
+});
+
+// Delete an Invoice Form by ID
+app.delete('/api/dynamoDB/deleteInvoiceForm/:WorkTicketID', async (req, res, next) => {
+    try{
+        const { WorkTicketID } = req.params;
+        const params = {
+            TableName: 'InvoiceForm-ghr672m57fd2re7tckfmfby2e4-dev',
+            Key: { WorkTicketID }
+        };
+
+        await docClient.send(new DeleteCommand(params));
+        res.status(200).json({ message: 'Invoice Form deleted successfully' });
+    } catch (error) {
+        console.log("Error deleting Invoice Form, check server.js (deleteInvoiceForm): ", error)
+        next(error);
     }
 });
 
