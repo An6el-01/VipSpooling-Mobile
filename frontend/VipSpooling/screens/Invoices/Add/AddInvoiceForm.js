@@ -1,3 +1,12 @@
+/**
+    Add A Customer Signature To This Form
+    Add A Cable Company Location To This Form
+    Add A Self filled Work Ticket ID Input
+    Make sure the type of labor cost is also pushed.
+*/
+
+
+
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -753,7 +762,7 @@ const AddInvoiceForm = () => {
                                 {/**Oil Company Input*/}
                                 <View style={styles.inputContainer}>
                                     <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>
-                                        Enter Oil Company:
+                                        Oil Company:
                                     </Text>
                                     <View style={styles.inputField}>
                                         <TextInput

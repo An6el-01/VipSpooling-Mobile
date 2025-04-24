@@ -1,10 +1,13 @@
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import {View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, TextInput, TouchableWithoutFeedback, Keyboard, ActivityIndicator, ScrollView } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../../store/themeSlice';
+import { setForms, setLoading, setError, selectSortedForms } from '../../store/formsSlice';
 import Card from '../../components/Card';
 import CustomBottomTab from '../../components/CustomBottomTab';
+import { endpoints } from '../../config';
+import { Auth } from 'aws-amplify';
 
 const styles = StyleSheet.create({
     background: {
@@ -120,13 +123,135 @@ const styles = StyleSheet.create({
     cardContainer: {
         height: 480,
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        fontSize: 16,
+        textAlign: 'center',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    emptyText: {
+        fontSize: 16,
+        textAlign: 'center',
+    },
+    cardContent: {
+        flex: 1,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#838383',
+    },
 });
 
 const MyForms = () => {
     const navigation = useNavigation();
-    const isDarkMode = useSelector((state) =>  state.theme.isDarkMode);
-    const dispatch =  useDispatch();
+    const isDarkMode = useSelector((state) => state.theme.isDarkMode);
+    const dispatch = useDispatch();
     const [searchQuery, setSearchQuery] = useState('');
+    
+    // Get forms from Redux store
+    const forms = useSelector(selectSortedForms);
+    const loading = useSelector((state) => state.forms.loading);
+    const error = useSelector((state) => state.forms.error);
+
+    const fetchAllForms = async () => {
+        try {
+            dispatch(setLoading(true));
+            dispatch(setError(null));
+
+            // Get the current authenticated user's session
+            const session = await Auth.currentSession();
+            const token = session.getAccessToken().getJwtToken();
+
+            // Common headers for both requests
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+
+            // Fetch both types of forms in parallel with proper error handling
+            const [invoiceResponse, jsaResponse] = await Promise.all([
+                fetch(endpoints.getAllInvoiceForms, { headers }),
+                fetch(endpoints.getAllJSAForms, { headers })
+            ]);
+
+            // Check responses and parse JSON
+            let invoiceData = { data: [] };
+            let jsaData = { data: [] };
+
+            if (invoiceResponse.ok) {
+                invoiceData = await invoiceResponse.json();
+            } else {
+                console.error('Invoice forms fetch failed:', await invoiceResponse.text());
+            }
+
+            if (jsaResponse.ok) {
+                jsaData = await jsaResponse.json();
+            } else {
+                console.error('JSA forms fetch failed:', await jsaResponse.text());
+            }
+
+            // Only update the forms if at least one request was successful
+            if (invoiceResponse.ok || jsaResponse.ok) {
+                // Combine and mark the forms by type, ensuring proper structure
+                const combinedForms = [
+                    ...(invoiceData.data || []).map(form => ({
+                        ...form,
+                        formType: 'invoice'
+                    })),
+                    ...(jsaData.data || []).map(form => ({
+                        ...form,
+                        formType: 'jsa',
+                        _typename: form._typename || 'JSA Form'
+                    }))
+                ];
+
+                dispatch(setForms(combinedForms));
+            } else {
+                // If both requests failed, set error but keep existing forms
+                throw new Error('Failed to fetch new forms');
+            }
+        } catch (err) {
+            console.error('Error fetching forms:', err);
+            dispatch(setError(err.message));
+            // Don't clear existing forms on error
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+
+    // Use useFocusEffect to fetch forms every time the screen is focused
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchAllForms();
+        }, []) // Empty dependency array as we want this to run every time the screen is focused
+    );
+
+    // Filter forms based on search query
+    const filteredForms = forms.filter(form => {
+        const searchLower = searchQuery.toLowerCase();
+        const searchableText = form.formType === 'invoice'
+            ? `${form.WorkTicketID || ''} ${form._typename || ''}`
+            : `${form.CustomerName || ''} ${form._typename || ''}`;
+        return searchableText.toLowerCase().includes(searchLower);
+    });
 
     const backgroundImage = isDarkMode
     ? require('../../assets/DarkMode.jpg')
@@ -183,27 +308,61 @@ const MyForms = () => {
                     </View>
                     <View style={styles.activitySection}>
                         {/* Activity Cards */}
-                        {/*
-                        ADD IN LINE STYLING
-                            - Make the Invoice stretch across the entire Card
-                        */}
                         <Card isDarkMode={isDarkMode} style={[{padding: 8}, styles.cardContainer]}>
-                            {[1, 2, 3, 4, 5, 6].map((item, index) => (
-                                <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
-                                <View style={styles.activityDetails}>
-                                    <Text style={[styles.activityText, {color: isDarkMode ? '#fff' : '#000'}]}>Invoice {item}</Text>
-                                    <Text style={[styles.activityText, {fontSize: 12 }]}>
-                                    {18 + index}/11/2024 - INV-0000{item}
+                            <ScrollView 
+                                style={styles.cardContent}
+                                showsVerticalScrollIndicator={true}
+                            >
+                            {loading ? (
+                                <View style={styles.loadingContainer}>
+                                    <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
+                                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                        Loading forms...
                                     </Text>
                                 </View>
-                                <TouchableOpacity onPress={() => {navigation.navigate('ViewForm')}}>
-                                    <Image
-                                    source={require('../../assets/view.png')}
-                                    style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
-                                    />
-                                </TouchableOpacity>
+                            ) : error ? (
+                                <View style={styles.errorContainer}>
+                                    <Text style={[styles.errorText, {color: isDarkMode ? '#fff' : '#000'}]}>
+                                        There was an error getting your forms. Please check your internet connection. Error:{error}
+                                    </Text>
                                 </View>
-                            ))}
+                            ) : filteredForms.length === 0 ? (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={[styles.emptyText, {color: isDarkMode ? '#fff' : '#000'}]}>
+                                        No forms found
+                                    </Text>
+                                </View>
+                            ) : (
+                                filteredForms.map((form, index) => (
+                                    <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
+                                        <View style={styles.activityDetails}>
+                                            <Text style={[styles.activityText, {color: isDarkMode ? '#fff' : '#000'}]}>
+                                                {form._typename || (form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form')}
+                                            </Text>
+                                            <Text style={[styles.activityText, {fontSize: 12 }]}>
+                                                {form.formType === 'invoice' 
+                                                    ? `${form.InvoiceDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`
+                                                    : `${form.FormDate || 'No Date'} - ${form.CustomerName || 'No Customer'}`
+                                                }
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity onPress={() => {
+                                            navigation.navigate('ViewForm', { 
+                                                formData: {
+                                                    ...form,
+                                                    _typename: form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form'
+                                                }
+                                            });
+                                        }}>
+                                            <Image
+                                                source={require('../../assets/view.png')}
+                                                style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))
+                            )}
+                            </ScrollView>
                         </Card>
                         {/*FLOATING ADD BUTTON*/}
                         <TouchableOpacity

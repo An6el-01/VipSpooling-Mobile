@@ -9,5 +9,7 @@ export const endpoints = {
     getAllInvoiceForms: `${API_URL}/api/dynamoDB/getAllInvoiceForms`,
     updateInvoiceForm: `${API_URL}/api/dynamoDB/updateInvoiceForm`,
     deleteInvoiceForm: `${API_URL}/api/dynamoDB/deleteInvoiceForm`,
+    getAllJSAForms: `${API_URL}/api/dynamoDB/getAllJSAForms`,
+
     // Add other endpoints here as needed
 }; 

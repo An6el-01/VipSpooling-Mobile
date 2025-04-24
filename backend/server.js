@@ -17,7 +17,6 @@ const { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, DeleteCom
 
 dotenv.config();
 
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -346,6 +345,8 @@ app.get('/api/pricingplans', async (req, res) => {
     }
 });
 
+//** INVOICE FORMS */
+
 // Create a new Invoice Form in dynamoDB
 app.post('/api/dynamoDB/createInvoiceForm', validateRequest(InvoiceFormSchema), async (req, res, next) => {
     try{
@@ -364,7 +365,12 @@ app.post('/api/dynamoDB/createInvoiceForm', validateRequest(InvoiceFormSchema), 
             Spooler,
             updatedAt,
             WellNumberName,
+            WellNumber,
+            Notes,
+            CableLength,
+            CableType,
             WorkType,
+            ExtraCharges,
             _lastChangedAt,
             _version,
             _typename,
@@ -386,6 +392,11 @@ app.post('/api/dynamoDB/createInvoiceForm', validateRequest(InvoiceFormSchema), 
                 Spooler: Spooler || '',
                 updatedAt: new Date().toISOString(),
                 WellNumberName: WellNumberName || '',
+                WellNumber: WellNumber || 0,
+                Notes: Notes || '',
+                CableLength: CableLength || 0,
+                CableType: CableType || '',
+                ExtraCharges: ExtraCharges || 0,
                 WorkType: WorkType || '',
                 _lastChangedAt: _lastChangedAt || '',
                 _version: _version || 0,
@@ -489,6 +500,40 @@ app.delete('/api/dynamoDB/deleteInvoiceForm/:WorkTicketID', async (req, res, nex
     } catch (error) {
         console.log("Error deleting Invoice Form, check server.js (deleteInvoiceForm): ", error)
         next(error);
+    }
+});
+
+//** JSA FORMS */
+
+//Get all items from JSAForm Table 
+app.get('/api/dynamoDB/getAllJSAForms', async (req, res, next) => {
+    try {
+        const { Items } = await docClient.send(new ScanCommand({
+            TableName: 'JsaForm-ghr672m57fd2re7tckfmfby2e4-dev',
+        }));
+
+        if (!Items) {
+            return res.status(404).json({
+                error: {
+                    message: 'No JSA forms found',
+                    code: 'NOT_FOUND'
+                }
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            count: Items.length,
+            data: Items
+        });
+    } catch (error) {
+        console.error("Error getting all JSA forms: ", error);
+        next({
+            status: 500,
+            message: 'Failed to retrieve JSA forms',
+            code: 'DB_ERROR',   
+            error: error.message
+        });
     }
 });
 

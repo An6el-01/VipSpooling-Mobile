@@ -18,12 +18,29 @@ const InvoiceFormSchema = Joi.object({
         amount: Joi.number().required(),
         qty: Joi.number().required(),
         rate: Joi.number().required(),
+        type: Joi.string().required(),
     })).optional(),
     OilCompany: Joi.string().optional(),
     ReelNumber: Joi.string().optional(),
     Spooler: Joi.string().optional(),
     updatedAt: Joi.string().optional(),
     WellNumberName: Joi.string().optional(),
+    
+    //Field needs to be added to the database
+    WellNumber:Joi.number().optional(),
+
+    //Field needs to be added to the database
+    Notes: Joi.string().optional(),
+
+    //Field needs to be added to the database
+    CableLength: Joi.number().optional(),
+
+    //Field needs to be added to the database
+    CableType: Joi.string().optional(),
+
+    //Field needs to be added to the database
+    ExtraCharges: Joi.number().optional(),
+
     WorkType: Joi.string().optional(),
     _lastChangedAt: Joi.string().optional(),
     _version: Joi.number().optional(),
