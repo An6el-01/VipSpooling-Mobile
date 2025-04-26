@@ -7,7 +7,7 @@
 */
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -17,6 +17,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { Auth } from 'aws-amplify';
 import { endpoints } from '../../../config';
+import SignatureScreen from 'react-native-signature-canvas';
 
 const styles = StyleSheet.create({
     background: {
@@ -447,6 +448,102 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#000',
     },
+    signatureContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+        marginTop: 10,
+    },
+    signatureLabelText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#000',
+    },
+    signatureButton: {
+        backgroundColor: '#FFD700',
+        borderRadius: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 6,
+        borderWidth: 1,
+        borderColor: '#000',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        width: '40%',
+    },
+    signatureButtonText: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#000',
+        textAlign: 'center',
+        letterSpacing: 0.5,
+    },
+    signatureModal: {
+        flex: 1,
+        backgroundColor: '#FFF',
+    },
+    signatureHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 50,
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+        backgroundColor: '#FFF',
+        zIndex: 1,
+    },
+    signatureModalContainer: {
+        flex: 1,
+        backgroundColor: '#FFF',
+        marginTop: 50,
+        position: 'relative',
+        height: '100%',
+    },
+    signatureCanvasContainer: {
+        flex: 1,
+        backgroundColor: '#FFF',
+        marginTop: 16,
+        marginBottom: 80, // Space for buttons at bottom
+    },
+    signatureButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#E0E0E0',
+        backgroundColor: '#FFF',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1,
+    },
+    modalButton: {
+        flex: 1,
+        marginHorizontal: 8,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        borderWidth: 1,
+    },
+    clearButton: {
+        backgroundColor: '#FFF',
+        borderColor: '#000',
+        marginBottom: 15
+    },
+    confirmButton: {
+        backgroundColor: '#FFD700',
+        borderColor: '#000',
+        marginBottom: 15
+    },
+    modalButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
 });
 
 const AddInvoiceForm = () => {
@@ -459,6 +556,7 @@ const AddInvoiceForm = () => {
     const [formattedDate, setFormattedDate] = useState('');
     const [spoolerName, setSpoolerName] = useState('');
     const [workTicketID, setWorkTicketID] = useState('');
+    const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [laborCosts, setLaborCosts] = useState({
         loadUnload: { rate: '', qty: '', amount: '' },
         spoolerMiles: { rate: '', qty: '', amount: '' },
@@ -483,7 +581,8 @@ const AddInvoiceForm = () => {
     const [customItemInput, setCustomItemInput] = useState('');
     const [showCustomItemInput, setShowCustomItemInput] = useState(false);
     const [extraCharges, setExtraCharges] = useState('');
-
+    const [signature, setSignature] = useState(null);
+    const signatureRef = useRef(null);
     const consumableItems = [
         'Mileage',
         'Overnight Stay',
@@ -526,10 +625,6 @@ const AddInvoiceForm = () => {
             const formatted = selectedDate.toISOString().split('T')[0].replace(/-/g, '/');
             setFormattedDate(formatted);
         }
-    };
-
-    const showDatepicker = () => {
-        setShowDatePicker(true);
     };
 
     const updateLaborCost = (section, field, value) => {
@@ -640,6 +735,19 @@ const AddInvoiceForm = () => {
         fetchCurrentUser();
         fetchWorkTicketID();
     }, []);
+
+    const handleSignature = (signature) => {
+        setSignature(signature);
+        setShowSignatureModal(false);
+    }
+
+    const handleClear = () => {
+        signatureRef.current?.clearSignature();
+    }
+
+    const handleConfirm = () => {
+        signatureRef.current?.readSignature();
+    }
 
     const fetchCurrentUser = async () => {
         try {
@@ -1592,7 +1700,22 @@ const AddInvoiceForm = () => {
                                 </View>
 
                                 {/** Customer Signature Input */}
-                                
+                                <View style={styles.signatureContainer}>
+                                    <Text style={[styles.signatureLabelText, { color: isDarkMode ? '#fff' : '#000'}]}>
+                                        Customer Signature:
+                                    </Text>
+                                    <TouchableOpacity
+                                        style={styles.signatureButton}
+                                        onPress={() => setShowSignatureModal(true)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Draw signature"
+                                    >
+                                        <Text style={styles.signatureButtonText}>
+                                            {signature ? 'Edit Signature' : 'Add Signature'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+
 
                                 <TouchableOpacity
                                 style={[styles.finishButton, { borderColor: '#000' }]}
@@ -1601,21 +1724,84 @@ const AddInvoiceForm = () => {
                                 }}
                                 accessibilityRole="button"
                                 accessibilityLabel="Finish Invoice Form"
-                            >
-                                <Text style={styles.finishButtonText}>
-                                    Finish Invoice Form
-                                </Text>
-                            </TouchableOpacity>
+                                 >
+                                    <Text style={styles.finishButtonText}>
+                                        Finish Invoice Form
+                                    </Text>
+                                </TouchableOpacity>                        
+                            </View>
+                        </Card>
+                    </View>
+                </TouchableWithoutFeedback>
+            </ScrollView>
+        </KeyboardAvoidingView>
 
-                                
+        {/**Signature Modal */}
+        <Modal
+                visible={showSignatureModal}
+                animationType="slide"
+                onRequestClose={() => setShowSignatureModal(false)}
+                statusBarTranslucent
+            >
+            <View style={styles.signatureModal}>
+                <View style={styles.signatureHeader}>
+                    <Text style={[styles.fieldText, { color: '#000' }]}>Draw Signature</Text>
+                    <TouchableOpacity
+                        onPress={() => setShowSignatureModal(false)}
+                        accessibilityLabel="Close signature modal"
+                    >
+                        <Text style={[styles.modalButtonText, { color: '#000' }]}>Close</Text>
+                    </TouchableOpacity>
+                </View>
 
-                                </View>
-                            </Card>
-                        </View>
-                    </TouchableWithoutFeedback>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </ImageBackground>
+                <View style={styles.signatureCanvasContainer}>
+                    <SignatureScreen
+                        ref={signatureRef}
+                        onOK={handleSignature}
+                        onEmpty={() => console.log('Empty')}
+                        autoClear={true}
+                        descriptionText="Sign here"
+                        webStyle={`
+                            .m-signature-pad {
+                                margin: 0;
+                                border: none;
+                                width: 100%;
+                                height: 200%;
+                            }
+                            .m-signature-pad--body {
+                                border: none;
+                            }
+                            .m-signature-pad--body canvas {
+                                width: 100%;
+                                height: 100%;
+                            }
+                            .m-signature-pad--footer {
+                                display: none;
+                            }
+                        `}
+                    />
+                </View>
+
+                <View style={styles.signatureButtons}>
+                    <TouchableOpacity
+                        style={[styles.modalButton, styles.clearButton]}
+                        onPress={handleClear}
+                        accessibilityLabel="Clear signature"
+                    >
+                        <Text style={[styles.modalButtonText, { color: '#000' }]}>Clear</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.modalButton, styles.confirmButton]}
+                        onPress={handleConfirm}
+                        accessibilityLabel="Confirm signature"
+                    >
+                        <Text style={[styles.modalButtonText, { color: '#000' }]}>Confirm</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
+
+    </ImageBackground>
     );
 }
 

@@ -186,13 +186,10 @@ const styles = StyleSheet.create({
         zIndex: 1,
     },
     signatureContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        flex: 1,
         backgroundColor: '#FFF',
-        marginTop: 70,
+        marginTop: 16,
+        marginBottom: 80, // Space for buttons at bottom
     },
     signatureButtons: {
         flexDirection: 'row',
@@ -218,10 +215,12 @@ const styles = StyleSheet.create({
     clearButton: {
         backgroundColor: '#FFF',
         borderColor: '#000',
+        marginBottom: 15,
     },
     confirmButton: {
         backgroundColor: '#FFD700',
         borderColor: '#000',
+        marginBottom: 15,
     },
     modalButtonText: {
         fontSize: 16,
@@ -569,26 +568,15 @@ const AddJsaForm = () => {
                             descriptionText="Sign here"
                             webStyle={`
                                 .m-signature-pad {
-                                    box-shadow: none;
+                                    margin: 0;
                                     border: none;
-                                    position: absolute;
-                                    left: 0;
-                                    top: 0;
                                     width: 100%;
-                                    height: 100%;
+                                    height: 200%;
                                 }
                                 .m-signature-pad--body {
                                     border: none;
-                                    position: absolute;
-                                    left: 0;
-                                    right: 0;
-                                    top: 0;
-                                    bottom: 0;
                                 }
                                 .m-signature-pad--body canvas {
-                                    position: absolute;
-                                    left: 0;
-                                    top: 0;
                                     width: 100%;
                                     height: 100%;
                                 }
