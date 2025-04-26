@@ -2,9 +2,9 @@
     Add A Customer Signature To This Form
     Add A Cable Company Location To This Form
     Add A Self filled Work Ticket ID Input
-    Make sure the type of labor cost is also pushed.
+    
+    *** If one one of the labor costs is not filled out, make the default value 0.****
 */
-
 
 
 import React, { useState, useEffect } from 'react';
@@ -16,6 +16,7 @@ import Card from '../../../components/Card';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { Auth } from 'aws-amplify';
+import { endpoints } from '../../../config';
 
 const styles = StyleSheet.create({
     background: {
@@ -457,6 +458,7 @@ const AddInvoiceForm = () => {
     const [formDate, setFormDate] = useState(new Date());
     const [formattedDate, setFormattedDate] = useState('');
     const [spoolerName, setSpoolerName] = useState('');
+    const [workTicketID, setWorkTicketID] = useState('');
     const [laborCosts, setLaborCosts] = useState({
         loadUnload: { rate: '', qty: '', amount: '' },
         spoolerMiles: { rate: '', qty: '', amount: '' },
@@ -473,8 +475,6 @@ const AddInvoiceForm = () => {
         comboSpooler: false,
         technicianLaydown: false,
     });
-
-    // Add consumables state
     const [nextRowId, setNextRowId] = useState(1);
     const [consumableRows, setConsumableRows] = useState([
         { id: 0, item: '', qty: '', rate: '', amount: '' }
@@ -638,6 +638,7 @@ const AddInvoiceForm = () => {
 
     useEffect(() => {
         fetchCurrentUser();
+        fetchWorkTicketID();
     }, []);
 
     const fetchCurrentUser = async () => {
@@ -649,6 +650,37 @@ const AddInvoiceForm = () => {
             console.error('Error fetching user info:', error);
         }
     };
+
+    const fetchWorkTicketID = async () => {
+        try {
+            console.log('Fetching Work Ticket ID from:', endpoints.generateWorkTicketID);
+            const response = await fetch(endpoints.generateWorkTicketID, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Received data:', data);
+            
+            if (data.workTicketID) {
+                setWorkTicketID(data.workTicketID);
+            } else {
+                console.error('Failed to generate Work Ticket ID (AddInvoiceForm.js):', data.error || 'No workTicketID in response');
+            }
+        } catch (error) {
+            console.error('Error fetching Work Ticket ID (AddInvoiceForm.js):', error.message);
+            console.error('Full error:', error);
+        }
+    };
+
+    const handleSubmit =  async () => {
+        console.log('handleSubmit');
+    }
 
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
@@ -693,6 +725,22 @@ const AddInvoiceForm = () => {
                             {/** FORM SECTION */}
                             <Card isDarkMode={isDarkMode}>
                                 <View style={styles.cardContainerContent}>
+
+                                {/**Work Ticket ID Input */}
+                                <View  style={styles.inputContainer}>
+                                    <Text style={[styles.fieldText, {color: isDarkMode ? '#fff' : '#000'}]}>
+                                        Work Ticket ID:
+                                    </Text>
+                                    <View style={styles.inputField}>
+                                        <TextInput
+                                            style={styles.inputText}
+                                            placeholder='Loading...'
+                                            placeholderTextColor={'#000'}
+                                            value={workTicketID}
+                                            editable={false}
+                                        />
+                                    </View>
+                                </View>
 
                                 {/* Order Date Input */}
                                 <View style={styles.dateContainer}>
@@ -754,6 +802,20 @@ const AddInvoiceForm = () => {
                                         <TextInput
                                             style={styles.inputText}
                                             placeholder='Enter Cable Company'
+                                            placeholderTextColor={'#000'}
+                                        />
+                                    </View>
+                                </View>
+
+                                {/**Cable Company Location Input*/}
+                                <View style={styles.inputContainer}>
+                                    <Text style={[styles.fieldText, {color: isDarkMode ? '#fff' : '#000'}]}>
+                                        Cable Company Location:
+                                    </Text>
+                                    <View style={styles.inputField}>
+                                        <TextInput
+                                            style={styles.inputText}
+                                            placeholder='Enter Cable Company Location'
                                             placeholderTextColor={'#000'}
                                         />
                                     </View>
@@ -1529,11 +1591,13 @@ const AddInvoiceForm = () => {
                                     </View>
                                 </View>
 
+                                {/** Customer Signature Input */}
+                                
+
                                 <TouchableOpacity
                                 style={[styles.finishButton, { borderColor: '#000' }]}
                                 onPress={() => {
-                                    // Add your finish form logic here
-                                    console.log('Finishing Invoice Form...');
+                                    handleSubmit();
                                 }}
                                 accessibilityRole="button"
                                 accessibilityLabel="Finish Invoice Form"

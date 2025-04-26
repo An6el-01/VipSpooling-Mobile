@@ -10,6 +10,6 @@ export const endpoints = {
     updateInvoiceForm: `${API_URL}/api/dynamoDB/updateInvoiceForm`,
     deleteInvoiceForm: `${API_URL}/api/dynamoDB/deleteInvoiceForm`,
     getAllJSAForms: `${API_URL}/api/dynamoDB/getAllJSAForms`,
-
+    generateWorkTicketID: `${API_URL}/api/lambda/generateWorkTicketID-Invoices`,
     // Add other endpoints here as needed
 }; 

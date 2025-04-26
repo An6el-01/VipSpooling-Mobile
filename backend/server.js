@@ -6,6 +6,7 @@ const {
     AdminListGroupsForUserCommand 
 } = require('@aws-sdk/client-cognito-identity-provider');
 const { S3Client, ListObjectsV2Command, ListBucketsCommand } = require('@aws-sdk/client-s3');
+const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -53,6 +54,15 @@ const s3Client = new S3Client({
 });
 
 const dynamoDBClient = new DynamoDBClient({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+    maxAttempts: 3,
+});
+
+const lambdaClient = new LambdaClient({
     region: process.env.AWS_REGION,
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -345,7 +355,54 @@ app.get('/api/pricingplans', async (req, res) => {
     }
 });
 
+
 //** INVOICE FORMS */
+
+// Invoke Lambda Function to generate Work Ticket ID
+app.get('/api/lambda/generateWorkTicketID-Invoices', async (req, res, next) => {
+    try{
+        console.log('Generating Work Ticket ID - Request received');
+        
+        const params = {
+            FunctionName: 'GenerateWorkTicketID-Invoices',
+            InvocationType: 'RequestResponse',
+        };
+
+        console.log('Invoking Lambda function with params:', params);
+        
+        const command = new InvokeCommand(params);
+        const response = await lambdaClient.send(command);
+        
+        console.log('Lambda response received:', response);
+
+        // Parse the Lambda response
+        const payload = JSON.parse(Buffer.from(response.Payload).toString());
+        console.log('Parsed payload:', payload);
+
+        // Parse the body if it's a string
+        const body = typeof payload.body === 'string' ? JSON.parse(payload.body) : payload.body;
+        console.log('Parsed body:', body);
+
+        if (response.FunctionError || payload.statusCode === 500) {
+            throw new Error(body.error || 'Failed to invoke Lambda function');
+        }
+
+        // Ensure we're sending a properly formatted response
+        res.status(200).json({
+            success: true,
+            workTicketID: body.workTicketID,
+            message: 'Work Ticket ID generated successfully'
+        });
+    } catch (error) {
+        console.error('Error invoking Lambda function-Invoices (server.js): ', error);
+        // Send a properly formatted error response
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            message: 'Failed to generate Work Ticket ID for Invoices'
+        });
+    }
+});
 
 // Create a new Invoice Form in dynamoDB
 app.post('/api/dynamoDB/createInvoiceForm', validateRequest(InvoiceFormSchema), async (req, res, next) => {
