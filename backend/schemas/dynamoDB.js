@@ -48,6 +48,7 @@ const InvoiceFormSchema = Joi.object({
 });
 
 const JSAFormSchema = Joi.object({
+    WorkTicketID: Joi.string().required(),
     CustomerName: Joi.string().required(),
     createdAt: Joi.string().optional(),
     EffectiveDate: Joi.string().optional(),

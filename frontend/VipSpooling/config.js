@@ -11,5 +11,6 @@ export const endpoints = {
     deleteInvoiceForm: `${API_URL}/api/dynamoDB/deleteInvoiceForm`,
     getAllJSAForms: `${API_URL}/api/dynamoDB/getAllJSAForms`,
     generateWorkTicketID: `${API_URL}/api/lambda/generateWorkTicketID-Invoices`,
+    generateWorkTicketIDJsa: `${API_URL}/api/lambda/generateWorkTicketID-Jsa`,
     // Add other endpoints here as needed
 }; 

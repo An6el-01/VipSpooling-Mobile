@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -7,6 +7,7 @@ import Card from '../../../components/Card';
 import { Dropdown} from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import SignatureScreen from 'react-native-signature-canvas';
+import { endpoints } from '../../../config';
 
 const styles = StyleSheet.create({
     background: {
@@ -281,11 +282,16 @@ const AddJsaForm = () => {
     const [personnel, setPersonnel] = useState([]);
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [currentPersonnelIndex, setCurrentPersonnelIndex] = useState(null);
+    const [workTicketID, setWorkTicketID] = useState('');
     const signatureRef = useRef(null);
 
     const backgroundImage = isDarkMode 
     ? require('../../../assets/DarkMode.jpg')
     : require('../../../assets/LightMode.jpg')
+
+    useEffect(() => {
+        fetchWorkTicketID();
+    }, []);
 
     const onDateChange = (event, selectedDate) => {
         if (selectedDate) {
@@ -330,6 +336,37 @@ const AddJsaForm = () => {
     const handleConfirm = () => {
         signatureRef.current?.readSignature();
     };
+
+    const fetchWorkTicketID = async () => {
+        try{
+            console.log('Fetching Work Ticket ID from:', endpoints.generateWorkTicketIDJsa);
+            const response = await fetch(endpoints.generateWorkTicketIDJsa, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Received data:', data);
+
+            if (data.workTicketID) {
+                setWorkTicketID(data.workTicketID);
+            } else {
+                console.error('Failed to generate Work Ticket ID (AddJsaForm.js):', data.error || 'No workTicketID in response');
+            }
+        } catch (error) {
+            console.error('Error fetching Work Ticket ID (AddJsaForm.js):', error.message);
+            console.error('Full error:', error);
+        }
+    };
+
+    const handleSubmit = async () => {
+        console.log('handleSubmit');
+    }
 
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
@@ -382,6 +419,21 @@ const AddJsaForm = () => {
                                 {/* Form Section */}
                                 <Card isDarkMode={isDarkMode}>
                                     <View style={styles.cardContainerContent}>
+
+                                        {/**Form ID Input */}
+                                        <View style={styles.inputContainer}>
+                                            <Text style={[styles.fieldText, {color: isDarkMode ? '#fff' : '#000'}]}>JSA Form ID</Text>
+                                            <View style={styles.inputField}>
+                                                <TextInput
+                                                    style={styles.inputText}
+                                                    placeholder='Loading...'
+                                                    placeholderTextColor={'#000'}
+                                                    value={workTicketID}
+                                                    editable={false}
+                                                />
+                                            </View>
+                                        </View>
+
                                         {/* Customer Name Input */}
                                         <View style={styles.inputContainer}>
                                             <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>

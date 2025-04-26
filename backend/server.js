@@ -358,10 +358,11 @@ app.get('/api/pricingplans', async (req, res) => {
 
 //** INVOICE FORMS */
 
+
 // Invoke Lambda Function to generate Work Ticket ID
 app.get('/api/lambda/generateWorkTicketID-Invoices', async (req, res, next) => {
     try{
-        console.log('Generating Work Ticket ID - Request received');
+        console.log('Generating Work Ticket ID Invoices - Request received');
         
         const params = {
             FunctionName: 'GenerateWorkTicketID-Invoices',
@@ -401,7 +402,7 @@ app.get('/api/lambda/generateWorkTicketID-Invoices', async (req, res, next) => {
             error: error.message,
             message: 'Failed to generate Work Ticket ID for Invoices'
         });
-    }
+    }               
 });
 
 // Create a new Invoice Form in dynamoDB
@@ -561,6 +562,52 @@ app.delete('/api/dynamoDB/deleteInvoiceForm/:WorkTicketID', async (req, res, nex
 });
 
 //** JSA FORMS */
+
+//Invoke Lambda Function to generate Work Ticket ID
+app.get('/api/lambda/generateWorkTicketID-Jsa', async (req, res, next) => {
+    try{
+        console.log('Generating Work Ticket ID  Jsa - Request received');
+
+        const params = {
+            FunctionName: 'GenerateWorkTicketID-Jsa',
+            InvocationType: 'RequestResponse',
+        };
+
+        console.log('Invoking Lambda function with params:', params);
+
+        const command = new InvokeCommand(params);
+        const response = await lambdaClient.send(command);
+
+        console.log('Lambda response received:', response);
+
+        //Parse the Lambda response
+        const payload = JSON.parse(Buffer.from(response.Payload).toString());
+        console.log('Parsed payload:', payload);
+
+        //Parse the body if it's a string
+        const body = typeof payload.body === 'string' ? JSON.parse(payload.body): payload.body;
+        console.log('Parsed body:', body);
+
+        if (response.FunctionError || payload.statusCode === 500) {
+            throw new Error(body.error || 'Failed to invoke Lambda function');
+        }
+
+        //Ensure we're sending a properly formatted response
+        res.status(200).json({
+            success: true.valueOf,
+            workTicketID: body.workTicketID,
+            message: 'Work Ticket ID generated successfully'
+        });
+    } catch(error) {
+        console.error('Error invoking Lambda function-Jsa (server.js): ', error);
+        //Send a properly formatted error response
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            message: 'Failed to generate Work Ticket ID for Jsa'
+        });
+    }
+});
 
 //Get all items from JSAForm Table 
 app.get('/api/dynamoDB/getAllJSAForms', async (req, res, next) => {

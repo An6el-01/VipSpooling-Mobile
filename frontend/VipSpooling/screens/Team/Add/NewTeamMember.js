@@ -170,7 +170,6 @@ const NewTeamMember = () => {
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
     const dispatch = useDispatch();
 
-    const [selectedTemplates, setSelectedTemplates] = useState([]);
     const [selectedRole, setSelectedRole] = useState(null);
 
     const templates = [
@@ -188,9 +187,6 @@ const NewTeamMember = () => {
         ? require('../../../assets/DarkMode.jpg')
         : require('../../../assets/LightMode.jpg')
 
-        const removeTemplate = (value) => {
-            setSelectedTemplates(selectedTemplates.filter(item => item !== value));
-        };
 
     return (
         <ImageBackground source={backgroundImage} style={styles.background}>
@@ -261,39 +257,7 @@ const NewTeamMember = () => {
                                         keyboardType='email-address'
                                         autoCapitalize='none'
                                     />
-                                </View>
-                                {/** Templates Dropdown */}
-                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Select Templates</Text>
-                                <View style={[styles.dropdownContainer, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                                <MultiSelect
-                                        data={templates}
-                                        labelField="label"
-                                        valueField="value"
-                                        value={selectedTemplates}
-                                        onChange={setSelectedTemplates}
-                                        search={false}
-                                        style={styles.dropdownStyle}
-                                        placeholder={selectedTemplates.length === 0 ? 'Select Templates' : `${selectedTemplates.length} selected`}
-                                        placeholderStyle={styles.placeholderText}
-                                        selectedTextStyle={{ display: 'none' }}
-                                    />
-                                </View>
-
-                                {selectedTemplates.length > 0 && (
-                                    <View style={styles.tagContainer}>
-                                        {templates.filter(template => selectedTemplates.includes(template.value))
-                                            .map((template) => (
-                                                <View key={template.value} style={styles.tag}>
-                                                    <Text style={styles.tagText}>{template.label}</Text>
-                                                    <TouchableOpacity onPress={() => removeTemplate(template.value)}>
-                                                        <Text style={styles.removeTag}>❌</Text>
-                                                    </TouchableOpacity>
-                                                </View>
-                                            ))
-                                        }
-                                    </View>
-                                )}
-                                
+                                </View>                                
 
                                 {/** Role Dropdown */}
                                 <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>Assign Role</Text>
