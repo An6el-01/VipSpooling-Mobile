@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ImageBackground, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ImageBackground, ActivityIndicator, ScrollView } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../store/themeSlice';
 import { selectSortedForms } from '../store/formsSlice';
@@ -141,6 +141,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+  cardContent: {
+    flex: 1,
+  },
 });
 
 const Dashboard = () => {
@@ -216,55 +219,60 @@ const Dashboard = () => {
             Recent Activity
           </Text>
           <Card isDarkMode={isDarkMode} style={[{padding: 8}, styles.cardContainer]}>
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
-                <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                  Loading recent forms...
-                </Text>
-              </View>
-            ) : error ? (
-              <View style={styles.errorContainer}>
-                <Text style={[styles.errorText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                  {error}
-                </Text>
-              </View>
-            ) : recentForms.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                  No recent forms found
-                </Text>
-              </View>
-            ) : (
-              recentForms.map((form, index) => (
-                <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
-                  <View style={styles.activityDetails}>
-                    <Text style={[styles.activityText, {color: isDarkMode ? '#fff' : '#000'}]}>
-                      {form._typename || (form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form')}
-                    </Text>
-                    <Text style={[styles.activityText, {fontSize: 12 }]}>
-                      {form.formType === 'invoice' 
-                        ? `${form.InvoiceDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`
-                        : `${form.FormDate || 'No Date'} - ${form.CustomerName || 'No Customer'}`
-                      }
-                    </Text>
-                  </View>
-                  <TouchableOpacity onPress={() => {
-                    navigation.navigate('ViewForm', { 
-                      formData: {
-                        ...form,
-                        _typename: form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form'
-                      }
-                    });
-                  }}>
-                    <Image
-                      source={require('../assets/view.png')}
-                      style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
-                    />
-                  </TouchableOpacity>
+            <ScrollView 
+              style={styles.cardContent}
+              showsVerticalScrollIndicator={true}
+            >
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
+                  <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                    Loading recent forms...
+                  </Text>
                 </View>
-              ))
-            )}
+              ) : error ? (
+                <View style={styles.errorContainer}>
+                  <Text style={[styles.errorText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                    {error}
+                  </Text>
+                </View>
+              ) : recentForms.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={[styles.emptyText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                    No recent forms found
+                  </Text>
+                </View>
+              ) : (
+                recentForms.map((form, index) => (
+                  <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
+                    <View style={styles.activityDetails}>
+                      <Text style={[styles.activityText, {color: isDarkMode ? '#fff' : '#000'}]}>
+                        {form._typename || (form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form')}
+                      </Text>
+                      <Text style={[styles.activityText, {fontSize: 12 }]}>
+                        {form.formType === 'invoice' 
+                          ? `${form.InvoiceDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`
+                          : `${form.FormDate || 'No Date'} - ${form.CustomerName || 'No Customer'}`
+                        }
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={() => {
+                      navigation.navigate('ViewForm', { 
+                        formData: {
+                          ...form,
+                          _typename: form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form'
+                        }
+                      });
+                    }}>
+                      <Image
+                        source={require('../assets/view.png')}
+                        style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ))
+              )}
+            </ScrollView>
           </Card>
         </View>
       </View>

@@ -265,12 +265,6 @@ const styles = StyleSheet.create({
     inputContainer: {
         marginBottom: 16,
     },
-    inputLabel: {
-        fontSize: 14,
-        fontWeight: '500',
-        marginBottom: 6,
-        color: '#666',
-    },
 });
 
 const AddJsaForm = () => {

@@ -68,72 +68,91 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        padding: 1,
+        padding: 8,
+        gap: 16,
     },
     templateItem: {
-        width: '48%',
-        marginBottom: 5,
-        borderRadius: 12,
+        width: '47%',
+        marginBottom: 16,
+        borderRadius: 16,
+        backgroundColor: '#fff',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { 
+            width: 0, 
+            height: 4 
+        },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowRadius: 8,
+        elevation: 5,
         overflow: 'hidden',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 0, 0, 0.1)',
     },
     templateImage: {
-        width: '110%',
-        height: 170,
-        paddingTop: 2,
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12,
+        width: '100%',
+        height: 160,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        resizeMode: 'cover',
+        backgroundColor: '#f8f8f8',
     },
     templateInfo: {
         padding: 12,
+        width: '100%',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0, 0, 0, 0.05)',
     },
     templateName: {
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 4,
-        color: '#333',
+        fontSize: 13,
+        fontWeight: '700',
+        width: '100%',
+        marginBottom: 6,
+        color: '#2c2c2c',
         textAlign: 'center',
+        paddingHorizontal: 8,
+        letterSpacing: 0.3,
     },
     templateDate: {
-        fontSize: 12,
-        color: '#666',
+        fontSize: 11,
+        color: '#888',
         textAlign: 'center',
+        letterSpacing: 0.2,
     },
     requestButton: {
         backgroundColor: '#FFD700',
-        borderRadius: 12,  
+        borderRadius: 16,
         borderWidth: 1.3,
         borderColor: '#000',
-        paddingVertical: 14, 
-        paddingHorizontal: 20,
-        alignItems: 'center',  
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
-        width: '100%',  
-        alignSelf: 'center',  
-        marginTop: 20,
-        shadowColor: '#000',  
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3, 
+        width: '100%',
+        alignSelf: 'center',
+        marginTop: 24,
+        marginBottom: 8,
+        shadowColor: '#000',
+        shadowOffset: { 
+            width: 0, 
+            height: 4 
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 5,
     },
     requestButtonText: {
         color: '#000',
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '700',
+        letterSpacing: 0.3,
     },
     buttonArrow: {
         height: 22,
         width: 22,
-        marginLeft: 15,
+        marginLeft: 12,
     },
     loadingContainer: {
         flex: 1,
@@ -169,6 +188,8 @@ const getTemplateImage = (templateName) => {
         return require('../../assets/JSAForm.jpg');
     } else if(name.includes('invoice')){
         return require('../../assets/InvoiceForm.jpg');
+    } else if (name.includes('capillary')) {
+        return require('../../assets/CapillaryTubingReportForm_page-0001.jpg');
     } else {
         // Default image if no match is found
         return require('../../assets/noImage.jpg');
@@ -228,7 +249,11 @@ const MyTemplates = () => {
             navigation.navigate('AddJsaForm');
         } else if (templateName.includes('invoice')) {
             navigation.navigate('AddInvoiceForm');
-        } else {
+        } 
+        else if (templateName.includes('capillary')) {
+            navigation.navigate('AddCapillaryForm');
+        }
+        else {
             // Handle other template types here
             console.log('Selected template:', template);
         }
@@ -316,7 +341,6 @@ const MyTemplates = () => {
                                         <Image
                                             source={getTemplateImage(template.name)}
                                             style={styles.templateImage}
-                                            resizeMode="contain"
                                         />
                                         <View style={styles.templateInfo}>
                                             <Text style={styles.templateName} numberOfLines={2}>
