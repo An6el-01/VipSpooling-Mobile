@@ -3,6 +3,7 @@ const Joi = require('joi');
 const InvoiceFormSchema = Joi.object({
     WorkTicketID: Joi.string().required(),
     CableCompanyLocation: Joi.string().optional(),
+    CableCompany: Joi.string().optional(),
     Consumables: Joi.array().items(Joi.object({
         amount: Joi.number().required(),
         item: Joi.string().required(),
@@ -24,23 +25,12 @@ const InvoiceFormSchema = Joi.object({
     ReelNumber: Joi.string().optional(),
     Spooler: Joi.string().optional(),
     updatedAt: Joi.string().optional(),
-    WellNumberName: Joi.string().optional(),
-    
-    //Field needs to be added to the database
+    WellNumberName: Joi.string().optional(),    
     WellNumber:Joi.number().optional(),
-
-    //Field needs to be added to the database
     Notes: Joi.string().optional(),
-
-    //Field needs to be added to the database
     CableLength: Joi.number().optional(),
-
-    //Field needs to be added to the database
     CableType: Joi.string().optional(),
-
-    //Field needs to be added to the database
     ExtraCharges: Joi.number().optional(),
-
     WorkType: Joi.string().optional(),
     _lastChangedAt: Joi.string().optional(),
     _version: Joi.number().optional(),

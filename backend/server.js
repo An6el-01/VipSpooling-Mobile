@@ -407,65 +407,56 @@ app.get('/api/lambda/generateWorkTicketID-Invoices', async (req, res, next) => {
 
 // Create a new Invoice Form in dynamoDB
 app.post('/api/dynamoDB/createInvoiceForm', validateRequest(InvoiceFormSchema), async (req, res, next) => {
-    try{
-        const { 
-            WorkTicketID,
-            CableCompanyLocation,
-            Consumables,
-            createdAt,
-            CustomerSignature,
-            InvoiceDate,
-            InvoiceTotal,
-            JobType,
-            LaborCosts,
-            OilCompany,
-            ReelNumber,
-            Spooler,
-            updatedAt,
-            WellNumberName,
-            WellNumber,
-            Notes,
-            CableLength,
-            CableType,
-            WorkType,
-            ExtraCharges,
-            _lastChangedAt,
-            _version,
-            _typename,
-        } = req.body;
+    try {
         const params = {
             TableName: 'InvoiceForm-ghr672m57fd2re7tckfmfby2e4-dev',
-            Item:{
-                WorkTicketID,
-                CableCompanyLocation: CableCompanyLocation || '',
-                Consumables: Consumables || [],
+            Item: {
+                // Required fields
+                WorkTicketID: req.body.WorkTicketID,
+                InvoiceDate: req.body.InvoiceDate,
+                
+                // Optional fields with defaults
+                Spooler: req.body.Spooler || '',
+                WorkType: req.body.WorkType || '',
+                CableCompany: req.body.CableCompany || '',
+                CableCompanyLocation: req.body.CableCompanyLocation || '',
+                OilCompany: req.body.OilCompany || '',
+                WellNumber: Number(req.body.WellNumber) || 0,
+                WellNumberName: req.body.WellNumberName || '',
+                LaborCosts: req.body.LaborCosts || [],
+                JobType: req.body.JobType || [],
+                Consumables: req.body.Consumables || [],
+                Notes: req.body.Notes || '',
+                CableLength: Number(req.body.CableLength) || 0,
+                CableType: req.body.CableType || '',
+                ReelNumber: req.body.ReelNumber || '',
+                ExtraCharges: Number(req.body.ExtraCharges) || 0,
+                InvoiceTotal: Number(req.body.InvoiceTotal) || 0,
+                CustomerSignature: req.body.CustomerSignature || '',
+
+                // Metadata fields
                 createdAt: new Date().toISOString(),
-                CustomerSignature: CustomerSignature || '',
-                InvoiceDate: InvoiceDate || '',
-                InvoiceTotal: InvoiceTotal || 0,
-                JobType: JobType || [],
-                LaborCosts: LaborCosts || [],
-                OilCompany: OilCompany || '',
-                ReelNumber: ReelNumber || '',
-                Spooler: Spooler || '',
                 updatedAt: new Date().toISOString(),
-                WellNumberName: WellNumberName || '',
-                WellNumber: WellNumber || 0,
-                Notes: Notes || '',
-                CableLength: CableLength || 0,
-                CableType: CableType || '',
-                ExtraCharges: ExtraCharges || 0,
-                WorkType: WorkType || '',
-                _lastChangedAt: _lastChangedAt || '',
-                _version: _version || 0,
-                _typename: _typename || '',
+                _lastChangedAt: new Date().toISOString(),
+                _version: 1,
+                _typename: 'Invoice Form'
             }
         };
+
         await docClient.send(new PutCommand(params));
-        res.status(201).json({ message: 'Item created successfully', id});
+        res.status(201).json({ 
+            success: true, 
+            message: 'Invoice form created successfully',
+            data: params.Item
+        });
     } catch (error) {
-        console.log("Erro creating invoice form, check server.js (createInvoiceForm): ", error)
-        next(error);
+        console.error("Error creating invoice form:", error);
+        next({
+            status: 500,
+            message: 'Failed to create invoice form',
+            code: 'DB_ERROR',
+            error: error.message
+        });
     }
 });
 

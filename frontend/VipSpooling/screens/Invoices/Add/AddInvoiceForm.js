@@ -8,7 +8,7 @@
 
 
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../../../store/themeSlice';
@@ -551,37 +551,19 @@ const AddInvoiceForm = () => {
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
     const dispatch = useDispatch();
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [totalAmount, setTotalAmount] = useState(0);
-    const [formDate, setFormDate] = useState(new Date());
-    const [formattedDate, setFormattedDate] = useState('');
-    const [spoolerName, setSpoolerName] = useState('');
-    const [workTicketID, setWorkTicketID] = useState('');
+    const [formattedDate, setFormattedDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0]; // This will give 'YYYY-MM-DD' format
+    });
     const [showSignatureModal, setShowSignatureModal] = useState(false);
-    const [laborCosts, setLaborCosts] = useState({
-        loadUnload: { rate: '', qty: '', amount: '' },
-        spoolerMiles: { rate: '', qty: '', amount: '' },
-        travelTime: { rate: '', qty: '', amount: '' },
-        standbyTime: { rate: '', qty: '', amount: '' },
-        spoolerLabor: { rate: '', qty: '', amount: '' },
-    });
-    const [mainJobType, setMainJobType] = useState('install'); // 'install' or 'pull'
-    const [additionalJobTypes, setAdditionalJobTypes] = useState({
-        gasLift: false,
-        gasInstall: false,
-        ctSpooler: false,
-        cableSpooler: false,
-        comboSpooler: false,
-        technicianLaydown: false,
-    });
+
+ 
     const [nextRowId, setNextRowId] = useState(1);
-    const [consumableRows, setConsumableRows] = useState([
-        { id: 0, item: '', qty: '', rate: '', amount: '' }
-    ]);
+
     const [activePickerRow, setActivePickerRow] = useState(null);
     const [customItemInput, setCustomItemInput] = useState('');
     const [showCustomItemInput, setShowCustomItemInput] = useState(false);
-    const [extraCharges, setExtraCharges] = useState('');
-    const [signature, setSignature] = useState(null);
+    const [signatureDataUrl, setSignatureDataUrl] = useState('');
     const signatureRef = useRef(null);
     const consumableItems = [
         'Mileage',
@@ -617,13 +599,49 @@ const AddInvoiceForm = () => {
 
     const [isPickerVisible, setPickerVisible] = useState(false);
 
+    // State Variables For Input Fields
+    const [workTicketID, setWorkTicketID] = useState('');
+    const [formDate, setFormDate] = useState(new Date());
+    const [spoolerName, setSpoolerName] = useState('');
+    const [workType, setWorkType] = useState('');
+    const [cableCompany, setCableCompany] = useState('');
+    const [cableCompanyLocation, setCableCompanyLocation] = useState('');
+    const [oilCompany, setOilCompany] = useState('');
+    const [wellNumber, setWellNumber] = useState('');
+    const [wellName, setWellName] = useState('');
+    const [laborCosts, setLaborCosts] = useState({
+        loadUnload: { rate: '', qty: '', amount: '' },
+        spoolerMiles: { rate: '', qty: '', amount: '' },
+        travelTime: { rate: '', qty: '', amount: '' },
+        standbyTime: { rate: '', qty: '', amount: '' },
+        spoolerLabor: { rate: '', qty: '', amount: '' },
+    });
+    const [mainJobType, setMainJobType] = useState(''); // 'install' or 'pull'
+    const [additionalJobTypes, setAdditionalJobTypes] = useState({
+        gasLift: false,
+        gasInstall: false,
+        ctSpooler: false,
+        cableSpooler: false,
+        comboSpooler: false,
+        technicianLaydown: false,
+    });
+    const [consumableRows, setConsumableRows] = useState([
+        { id: 0, item: '', qty: '', rate: '', amount: '' }
+    ]);
+    const [notes, setNotes] = useState('');
+    const [cableLength, setCableLength] = useState('');
+    const [cableType, setCableType] = useState('');
+    const [reelNumber, setReelNumber] = useState('');
+    const [extraCharges, setExtraCharges] = useState('');
+    const [totalAmount, setTotalAmount] = useState(0);
+    const [signature, setSignature] = useState(null);
+
+
     const onDateChange = (event, selectedDate) => {
         setShowDatePicker(Platform.OS === 'ios');
         if (selectedDate) {
             setFormDate(selectedDate);
-
-            const formatted = selectedDate.toISOString().split('T')[0].replace(/-/g, '/');
-            setFormattedDate(formatted);
+            setFormattedDate(selectedDate.toISOString().split('T')[0]);
         }
     };
 
@@ -736,10 +754,27 @@ const AddInvoiceForm = () => {
         fetchWorkTicketID();
     }, []);
 
-    const handleSignature = (signature) => {
-        setSignature(signature);
+    const handleSignature = (signatureResult) => {
+        const base64Data = signatureResult.replace('data:image/png;base64,', '');
+        setSignature(base64Data);
+        setSignatureDataUrl(signatureResult);
         setShowSignatureModal(false);
-    }
+    };
+
+    const handleEditSignature = () => {
+        if (signature) {
+            setSignatureDataUrl(`data:image/png;base64,${signature}`);
+        }
+        setShowSignatureModal(true);
+    };
+
+    // This is the function that gets the signature image
+    // const getSignatureImage = () => {
+    //     if (signature) {
+    //         return `data:image/png;base64,${signature}`;
+    //     }
+    //     return null;
+    // };
 
     const handleClear = () => {
         signatureRef.current?.clearSignature();
@@ -786,9 +821,113 @@ const AddInvoiceForm = () => {
         }
     };
 
-    const handleSubmit =  async () => {
-        console.log('handleSubmit');
-    }
+    const handleSubmit = async () => {
+        try {
+            // Transform labor costs into the required format
+            const formattedLaborCosts = [
+                {
+                    type: 'Load/Unload',
+                    rate: Number(laborCosts.loadUnload.rate) || 0,
+                    qty: Number(laborCosts.loadUnload.qty) || 0,
+                    amount: Number(laborCosts.loadUnload.amount) || 0
+                },
+                {
+                    type: 'Spooler Miles',
+                    rate: Number(laborCosts.spoolerMiles.rate) || 0,
+                    qty: Number(laborCosts.spoolerMiles.qty) || 0,
+                    amount: Number(laborCosts.spoolerMiles.amount) || 0
+                },
+                {
+                    type: 'Travel Time',
+                    rate: Number(laborCosts.travelTime.rate) || 0,
+                    qty: Number(laborCosts.travelTime.qty) || 0,
+                    amount: Number(laborCosts.travelTime.amount) || 0
+                },
+                {
+                    type: 'Standby Time',
+                    rate: Number(laborCosts.standbyTime.rate) || 0,
+                    qty: Number(laborCosts.standbyTime.qty) || 0,
+                    amount: Number(laborCosts.standbyTime.amount) || 0
+                },
+                {
+                    type: 'Spooler Labor',
+                    rate: Number(laborCosts.spoolerLabor.rate) || 0,
+                    qty: Number(laborCosts.spoolerLabor.qty) || 0,
+                    amount: Number(laborCosts.spoolerLabor.amount) || 0
+                }
+            ];
+
+            // Format consumables data - ensure all fields are properly formatted
+            const formattedConsumables = consumableRows.map(row => ({
+                item: row.item || '',
+                qty: parseFloat(row.qty) || 0,
+                rate: parseFloat(row.rate) || 0,
+                amount: parseFloat(row.amount) || 0
+            })).filter(row => row.item); // Only include rows with an item selected
+
+            // Format job types
+            const jobTypes = [
+                mainJobType,
+                ...Object.entries(additionalJobTypes)
+                    .filter(([_, isSelected]) => isSelected)
+                    .map(([type]) => type)
+            ];
+
+            // Create the request body according to the schema
+            const formData = {
+                WorkTicketID: workTicketID,
+                InvoiceDate: formattedDate,
+                Spooler: spoolerName,
+                WorkType: workType,
+                CableCompany: cableCompany,
+                CableCompanyLocation: cableCompanyLocation,
+                OilCompany: oilCompany,
+                WellNumber: Number(wellNumber) || 0,
+                WellNumberName: wellName,
+                LaborCosts: formattedLaborCosts,
+                JobType: jobTypes,
+                Consumables: formattedConsumables,
+                Notes: notes,
+                CableLength: Number(cableLength) || 0,
+                CableType: cableType,
+                ReelNumber: reelNumber,
+                ExtraCharges: Number(extraCharges) || 0,
+                InvoiceTotal: Number(totalAmount) || 0,
+                CustomerSignature: signature || '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                _lastChangedAt: new Date().toISOString(),
+                _version: 1,
+                _typename: 'Invoice Form'
+            };
+
+            // Make the API call
+            const response = await fetch(endpoints.createInvoiceForm, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`);
+            }
+
+            const result = await response.json();
+            console.log('Form submitted successfully:', result);
+            navigation.goBack();
+
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            Alert.alert(
+                'Error',
+                `Failed to submit the form: ${error.message}`,
+                [{ text: 'OK' }]
+            );
+        }
+    };
 
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
@@ -897,6 +1036,8 @@ const AddInvoiceForm = () => {
                                             style={styles.inputText}
                                             placeholder='Enter Work Type'
                                             placeholderTextColor={'#000'}
+                                            value={workType}
+                                            onChangeText={setWorkType}
                                         />
                                     </View>
                                 </View>
@@ -911,6 +1052,8 @@ const AddInvoiceForm = () => {
                                             style={styles.inputText}
                                             placeholder='Enter Cable Company'
                                             placeholderTextColor={'#000'}
+                                            value={cableCompany}
+                                            onChangeText={setCableCompany}
                                         />
                                     </View>
                                 </View>
@@ -925,6 +1068,8 @@ const AddInvoiceForm = () => {
                                             style={styles.inputText}
                                             placeholder='Enter Cable Company Location'
                                             placeholderTextColor={'#000'}
+                                            value={cableCompanyLocation}
+                                            onChangeText={setCableCompanyLocation}
                                         />
                                     </View>
                                 </View>
@@ -939,6 +1084,8 @@ const AddInvoiceForm = () => {
                                             style={styles.inputText}
                                             placeholder='Enter Oil Company'
                                             placeholderTextColor={'#000'}
+                                            value={oilCompany}
+                                            onChangeText={setOilCompany}
                                         />
                                     </View>
                                 </View>
@@ -954,6 +1101,8 @@ const AddInvoiceForm = () => {
                                             placeholder='Enter Well Number'
                                             placeholderTextColor={'#000'}
                                             keyboardType='numeric'
+                                            value={wellNumber}
+                                            onChangeText={setWellNumber}
                                         />
                                     </View>
                                 </View>
@@ -968,6 +1117,8 @@ const AddInvoiceForm = () => {
                                             style={styles.inputText}
                                             placeholder='Enter Well Name'
                                             placeholderTextColor={'#000'}
+                                            value={wellName}
+                                            onChangeText={setWellName}
                                         />
                                     </View>
                                 </View>
@@ -1612,12 +1763,14 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <View style={styles.inputNotesField}>
                                         <TextInput
-                                            style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000'}]}
+                                            style={[styles.inputText, { color: '#000'}]}
                                             placeholder="Enter notes"
                                             placeholderTextColor={'#000'}
                                             multiline={true}
                                             numberOfLines={4}
                                             textAlignVertical="top"
+                                            value={notes}
+                                            onChangeText={setNotes}
                                         />
                                     </View>
                                 </View>
@@ -1629,10 +1782,12 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <View style={styles.inputField}>
                                         <TextInput
-                                            style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000'}]}
+                                            style={[styles.inputText, { color: '#000'}]}
                                             keyboardType='numeric'
                                             placeholder='Enter Cable Length'
                                             placeholderTextColor={'#000'}
+                                            value={cableLength}
+                                            onChangeText={setCableLength}
                                         />
                                     </View>
                                 </View>
@@ -1644,9 +1799,11 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <View style={styles.inputField}>
                                         <TextInput
-                                            style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000'}]}
+                                            style={[styles.inputText, { color: '#000'}]}
                                             placeholder='Enter Cable Type'
                                             placeholderTextColor={'#000'}
+                                            value={cableType}
+                                            onChangeText={setCableType}
                                         />
                                     </View>
                                 </View>
@@ -1658,10 +1815,12 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <View style={styles.inputField}>
                                         <TextInput
-                                            style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000'}]}
+                                            style={[styles.inputText, { color: '#000'}]}
                                             placeholder='Enter Reel Number'
                                             placeholderTextColor={'#000'}
                                             keyboardType='numeric'
+                                            value={reelNumber}
+                                            onChangeText={setReelNumber}
                                         />
                                     </View>
                                 </View>
@@ -1695,6 +1854,7 @@ const AddInvoiceForm = () => {
                                             value={`$${totalAmount}`}
                                             placeholder="$0.00"
                                             placeholderTextColor={'#000'}
+                                            onChangeText={setTotalAmount}
                                         />
                                     </View>
                                 </View>
@@ -1706,7 +1866,7 @@ const AddInvoiceForm = () => {
                                     </Text>
                                     <TouchableOpacity
                                         style={styles.signatureButton}
-                                        onPress={() => setShowSignatureModal(true)}
+                                        onPress={handleEditSignature}
                                         accessibilityRole="button"
                                         accessibilityLabel="Draw signature"
                                     >
@@ -1716,7 +1876,7 @@ const AddInvoiceForm = () => {
                                     </TouchableOpacity>
                                 </View>
 
-
+                                {/** Finish Button */}
                                 <TouchableOpacity
                                 style={[styles.finishButton, { borderColor: '#000' }]}
                                 onPress={() => {
@@ -1745,7 +1905,9 @@ const AddInvoiceForm = () => {
             >
             <View style={styles.signatureModal}>
                 <View style={styles.signatureHeader}>
-                    <Text style={[styles.fieldText, { color: '#000' }]}>Draw Signature</Text>
+                    <Text style={[styles.fieldText, { color: '#000' }]}>
+                        {signature ? 'Edit Signature' : 'Draw Signature'}
+                    </Text>
                     <TouchableOpacity
                         onPress={() => setShowSignatureModal(false)}
                         accessibilityLabel="Close signature modal"
@@ -1759,8 +1921,10 @@ const AddInvoiceForm = () => {
                         ref={signatureRef}
                         onOK={handleSignature}
                         onEmpty={() => console.log('Empty')}
-                        autoClear={true}
+                        autoClear={false}
                         descriptionText="Sign here"
+                        imageType="image/png"
+                        dataURL={signatureDataUrl}
                         webStyle={`
                             .m-signature-pad {
                                 margin: 0;
