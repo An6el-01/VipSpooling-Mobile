@@ -15,7 +15,7 @@ export const endpoints = {
 
     //** JSA FORMS */
     getAllJSAForms: `${API_URL}/api/dynamoDB/getAllJSAForms`,
-
+    createJSAForm: `${API_URL}/api/dynamoDB/createJSAForm`,
     //** LAMBDA FUNCTIONS */
     generateWorkTicketID: `${API_URL}/api/lambda/generateWorkTicketID-Invoices`,
     generateWorkTicketIDJsa: `${API_URL}/api/lambda/generateWorkTicketID-Jsa`,

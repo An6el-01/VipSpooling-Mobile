@@ -24,7 +24,8 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(compression());
 
 // Rate limiting
@@ -632,6 +633,41 @@ app.get('/api/dynamoDB/getAllJSAForms', async (req, res, next) => {
     }
 });
 
+app.post('/api/dynamoDB/createJSAForm', validateRequest(JSAFormSchema), async (req, res, next) => {
+    try{
+        const params={
+            TableName: 'JsaForm-ghr672m57fd2re7tckfmfby2e4-dev',
+            Item:{
+                WorkTicketID: req.body.WorkTicketID,
+                CustomerName: req.body.CustomerName,
+                createdAt: new Date().toISOString(),
+                EffectiveDate: req.body.EffectiveDate,
+                FormDate: req.body.FormDate,
+                Location: req.body.Location,
+                Steps: req.body.Steps,
+                Personnel: req.body.Personnel,
+                updatedAt: new Date().toISOString(),
+                _lastChangedAt: new Date().toISOString(),
+                _version: 1,
+                _typename: 'JSA Form'
+            }
+        };
+        await docClient.send(new PutCommand(params));
+        res.status(201).json({
+            success: true,
+            message: 'Jsa form created successfully',
+            data: params.Item
+        });
+    } catch (error) {
+        console.error("Error creating Jsa form:", error);
+        next({
+            status: 500,
+            message: 'Failed to create Jsa form',
+            code: 'DB_ERROR',
+            error: error.message
+        });
+    }
+});
 // Error handling middleware
 app.use(errorHandler);
 

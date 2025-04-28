@@ -342,7 +342,7 @@ const MyForms = () => {
                                             <Text style={[styles.activityText, {fontSize: 12 }]}>
                                                 {form.formType === 'invoice' 
                                                     ? `${form.InvoiceDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`
-                                                    : `${form.FormDate || 'No Date'} - ${form.CustomerName || 'No Customer'}`
+                                                    : `${form.FormDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`
                                                 }
                                             </Text>
                                         </View>

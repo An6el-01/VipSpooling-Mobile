@@ -44,6 +44,14 @@ const JSAFormSchema = Joi.object({
     EffectiveDate: Joi.string().optional(),
     FormDate: Joi.string().optional(),
     Location: Joi.string().optional(),
+    Steps: Joi.array().items(Joi.object({
+        step: Joi.string().required(),
+        safetyEnvironmental: Joi.string().required(),
+        controls: Joi.string().required(), 
+        ppe: Joi.string().required(),
+        risk: Joi.string().required(), 
+        notes: Joi.string().required(),
+    })).optional(),
     Personnel: Joi.array().items(Joi.object({
         PersonName: Joi.string().required(),
         Role: Joi.string().required(),

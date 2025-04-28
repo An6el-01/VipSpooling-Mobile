@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal, Dimensions, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../../../store/themeSlice';
@@ -77,10 +77,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 8,
         color: '#000',
+        marginTop: 4,
     },
     inputField: {   
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         borderRadius: 12,
         paddingHorizontal: 16,
         paddingVertical: 12,
@@ -263,7 +264,69 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     inputContainer: {
+        marginBottom: 3,
+    },
+    carouselContainer: {
+        width: '100%',
+        marginVertical: 16,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    carouselHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+        paddingBottom: 16,
         marginBottom: 16,
+    },
+    stepTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#000',
+        textAlign: 'center',
+        flex: 1,
+    
+    },
+    stepIndicatorContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    stepDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginHorizontal: 4,
+    },
+    carouselNavigation: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    navButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 10,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+    },
+    navButtonText: {
+        fontSize: 26,
+        fontWeight: '600',
+        color: '#000',
     },
 });
 
@@ -272,12 +335,28 @@ const AddJsaForm = () => {
     const isDarkMode = useSelector((state) => state.theme.isDarkMode);
     const dispatch = useDispatch();
     const [formDate, setFormDate] = useState(new Date());
-    const [formattedDate, setFormattedDate] = useState('');
-    const [personnel, setPersonnel] = useState([]);
+    const [formattedDate, setFormattedDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0]; // This will give 'YYYY-MM-DD' format
+    });
+    const [personnel, setPersonnel] = useState([{ personName: '', role: '', signature: '' }]);
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [currentPersonnelIndex, setCurrentPersonnelIndex] = useState(null);
     const [workTicketID, setWorkTicketID] = useState('');
+    const [customerName, setCustomerName] = useState('');
+    const [customerLocation, setCustomerLocation] = useState('');
     const signatureRef = useRef(null);
+    const [signatureDataUrl, setSignatureDataUrl] = useState('');
+    const [currentStep, setCurrentStep] = useState(0);
+    const [steps, setSteps] = useState([
+        { stepNo: '1', task: 'Disconnect DH Cable', hazards: 'Electrical', controls: 'LOTO, Hot Gloves', ppe: 'ABFGIKRE', riskRating: 'low', notes: '' },
+        { stepNo: '2', task: 'Fiange up BOP', hazards: 'Pinch points and overhead hazards, slips, trips', controls: 'Hard hat, gloves, ST boots, safety glasses, tag lines', ppe: 'ABFGIKR', riskRating: 'low', notes: '' },
+        { stepNo: '3', task: 'Unseat and remove hanger', hazards: 'Pinch points and overhead hazards, slips, trips', controls: 'Hard hat, gloves, ST boots, safety glasses', ppe: 'ABFGIKR', riskRating: 'low', notes: '' },
+        { stepNo: '4', task: 'Rig up spoolers and pull well', hazards: 'Pinch points and overhead hazards, slips, trips', controls: 'Hard hat, gloves, ST boots, safety glasses, tag lines', ppe: 'ABFGIKR', riskRating: 'low', notes: '' },
+        { stepNo: '5', task: 'Dissassemble and lay down', hazards: 'Pinch points and overhead hazards, slips, trips', controls: 'Hard hat, gloves, ST boots, safety glasses, tag lines', ppe: 'ABFGIKR', riskRating: 'low', notes: '' },
+        { stepNo: '6', task: '', hazards: '', controls: '', ppe: '', riskRating: '', notes: '' },
+    ]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const backgroundImage = isDarkMode 
     ? require('../../../assets/DarkMode.jpg')
@@ -290,7 +369,7 @@ const AddJsaForm = () => {
     const onDateChange = (event, selectedDate) => {
         if (selectedDate) {
             setFormDate(selectedDate);
-            const formatted = selectedDate.toISOString().split('T')[0].replace(/-/g, '/');
+            const formatted = selectedDate.toISOString().split('T')[0]; // This will give 'YYYY-MM-DD' format
             setFormattedDate(formatted);
         }
     };
@@ -311,20 +390,33 @@ const AddJsaForm = () => {
         setPersonnel(newPersonnel);
     };
 
-    const handleSignature = (signature) => {
+    const handleSignature = (signatureResult) => {
         if (currentPersonnelIndex !== null) {
-            updatePersonnel(currentPersonnelIndex, 'signature', signature);
+            const base64Data = signatureResult.replace('data:image/png;base64,', '');
+            updatePersonnel(currentPersonnelIndex, 'signature', base64Data);
+            setSignatureDataUrl('');
         }
         setShowSignatureModal(false);
     };
 
-    const openSignatureModal = (index) => {
+    const handleEditSignature = (index) => {
         setCurrentPersonnelIndex(index);
+        const signature = personnel[index].signature;
+        if (signature) {
+            setSignatureDataUrl(`data:image/png;base64,${signature}`);
+        } else {
+            setSignatureDataUrl('');
+        }
         setShowSignatureModal(true);
+    };
+
+    const openSignatureModal = (index) => {
+        handleEditSignature(index);
     };
 
     const handleClear = () => {
         signatureRef.current?.clearSignature();
+        setSignatureDataUrl('');
     };
 
     const handleConfirm = () => {
@@ -359,8 +451,93 @@ const AddJsaForm = () => {
     };
 
     const handleSubmit = async () => {
-        console.log('handleSubmit');
-    }
+        if (isSubmitting) return;
+        
+        try {
+            setIsSubmitting(true);
+            
+            // Instead of filtering, ensure all required fields have at least a space character
+            const formattedSteps = steps.map(step => ({
+                step: step.task && step.task.trim() !== '' ? step.task : ' ',
+                safetyEnvironmental: step.hazards && step.hazards.trim() !== '' ? step.hazards : ' ',
+                controls: step.controls && step.controls.trim() !== '' ? step.controls : ' ',
+                ppe: step.ppe && step.ppe.trim() !== '' ? step.ppe : ' ',
+                risk: step.riskRating && step.riskRating.trim() !== '' ? step.riskRating : ' ', 
+                notes: step.notes && step.notes.trim() !== '' ? step.notes : ' '
+            }));
+
+            const formattedPersonnel = personnel.map(person => ({
+                PersonName: person.personName && person.personName.trim() !== '' ? person.personName : ' ',
+                Role: person.role && person.role.trim() !== '' ? person.role : ' ',
+                Signature: person.signature || ''
+            }));
+
+            const formData = {
+                WorkTicketID: workTicketID,
+                CustomerName: customerName || ' ',
+                Location: customerLocation || ' ',
+                FormDate: formattedDate,
+                EffectiveDate: formattedDate,
+                Steps: formattedSteps,
+                Personnel: formattedPersonnel
+            };
+
+            console.log('Submitting JSA form data:', formData);
+
+            const response = await fetch(endpoints.createJSAForm, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`);
+            }
+
+            const result = await response.json();
+            console.log('Form submitted successfully:', result);
+            
+            Alert.alert(
+                'Success',
+                'JSA Form saved successfully!',
+                [{ text: 'OK', onPress: () => navigation.goBack() }]
+            );
+
+        } catch (error) {
+            console.error('Error submitting JSA form:', error);
+            Alert.alert(
+                'Error',
+                `Failed to submit the form: ${error.message}`,
+                [{ text: 'OK' }]
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleNextStep = () => {
+        if (currentStep < steps.length - 1) {
+            setCurrentStep(currentStep + 1);
+        }
+    };
+
+    const handlePrevStep = () => {
+        if (currentStep > 0) {
+            setCurrentStep(currentStep - 1);
+        }
+    };
+
+    const updateStepField = (field, value) => {
+        const updatedSteps = [...steps];
+        updatedSteps[currentStep] = {
+            ...updatedSteps[currentStep],
+            [field]: value
+        };
+        setSteps(updatedSteps);
+    };
 
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
@@ -416,7 +593,7 @@ const AddJsaForm = () => {
 
                                         {/**Form ID Input */}
                                         <View style={styles.inputContainer}>
-                                            <Text style={[styles.fieldText, {color: isDarkMode ? '#fff' : '#000'}]}>JSA Form ID</Text>
+                                            <Text style={[styles.fieldText, {color: isDarkMode ? '#fff' : '#000'}]}>JSA Form ID:</Text>
                                             <View style={styles.inputField}>
                                                 <TextInput
                                                     style={styles.inputText}
@@ -431,15 +608,17 @@ const AddJsaForm = () => {
                                         {/* Customer Name Input */}
                                         <View style={styles.inputContainer}>
                                             <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>
-                                                Customer Name
+                                                Customer Name:
                                             </Text>
                                             <View style={styles.inputField}>
                                                 <TextInput
                                                     placeholder="Enter customer name"
-                                                    placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
-                                                    style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    placeholderTextColor={isDarkMode ? '#999' :'#aaa'}
+                                                    style={[styles.inputText, { color: '#000' }]}
                                                     keyboardType="default"
                                                     autoCapitalize="words"
+                                                    value={customerName}
+                                                    onChangeText={setCustomerName}
                                                     accessibilityLabel="Customer name input"
                                                     accessibilityHint="Enter the name of the customer"
                                                 />
@@ -449,15 +628,17 @@ const AddJsaForm = () => {
                                         {/* Customer Location Input */}
                                         <View style={styles.inputContainer}>
                                             <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                                Customer Location
+                                                Customer Location:
                                             </Text>
                                             <View style={styles.inputField}>
                                                 <TextInput
                                                     placeholder="Enter customer location"
                                                     placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
-                                                    style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                    style={[styles.inputText, { color: '#000' }]}
                                                     keyboardType="default"
                                                     autoCapitalize="words"
+                                                    value={customerLocation}
+                                                    onChangeText={setCustomerLocation}
                                                     accessibilityLabel="Customer location input"
                                                     accessibilityHint="Enter the location of the customer"
                                                 />
@@ -485,6 +666,127 @@ const AddJsaForm = () => {
                                     </View>
                                 </Card>
 
+                                {/* STEPS CAROUSEL SECTION */}
+                                <Card isDarkMode={isDarkMode} style={{ marginTop: 16 }}>
+                                    <View style={styles.cardContainerContent}>
+                                        <View style={styles.carouselContainer}>
+                                            <View style={styles.carouselHeader}>
+                                                <TouchableOpacity 
+                                                    style={[styles.navButton, { opacity: currentStep === 0 ? 0.5 : 1 }]}
+                                                    onPress={handlePrevStep}
+                                                    disabled={currentStep === 0}
+                                                >
+                                                    <Text style={styles.navButtonText}>←</Text>
+                                                </TouchableOpacity>
+                                                
+                                                <Text style={[styles.stepTitle, { color: '#000' }]}>
+                                                    Step {currentStep + 1} of 6
+                                                </Text>
+                                                
+                                                <TouchableOpacity 
+                                                    style={[styles.navButton, { opacity: currentStep === 5 ? 0.5 : 1 }]}
+                                                    onPress={handleNextStep}
+                                                    disabled={currentStep === 5}
+                                                >
+                                                    <Text style={styles.navButtonText}>→</Text>
+                                                </TouchableOpacity>
+                                            </View>
+
+                                            {/* Step Input Fields */}
+                                            <View>
+                                                <Text style={[styles.fieldText, { color: '#000' }]}>Task/Step:</Text>
+                                                <View style={styles.inputField}>
+                                                    <TextInput
+                                                        style={styles.inputText}
+                                                        value={steps[currentStep].task}
+                                                        onChangeText={(text) => updateStepField('task', text)}
+                                                        placeholder="Enter task/step description"
+                                                        placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
+                                                    />
+                                                </View>
+
+                                                <Text style={[styles.fieldText, { color: '#000' }]}>Potential Safety/Environmental Hazards:</Text>
+                                                <View style={[styles.inputField, { height: 100, alignItems: 'flex-start' }]}>
+                                                    <TextInput
+                                                        style={[styles.inputText, { height: '100%', textAlignVertical: 'top' }]}
+                                                        value={steps[currentStep].hazards}
+                                                        onChangeText={(text) => updateStepField('hazards', text)}
+                                                        placeholder="Enter potential hazards"
+                                                        placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
+                                                        multiline={true}
+                                                        numberOfLines={4}
+                                                    />
+                                                </View>
+
+                                                <Text style={[styles.fieldText, { color: '#000' }]}>Identified Hazard/Risk Controls:</Text>
+                                                <View style={[styles.inputField, { height: 100, alignItems: 'flex-start' }]}>
+                                                    <TextInput
+                                                        style={[styles.inputText, { height: '100%', textAlignVertical: 'top' }]}
+                                                        value={steps[currentStep].controls}
+                                                        onChangeText={(text) => updateStepField('controls', text)}
+                                                        placeholder="Enter risk controls"
+                                                        placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
+                                                        multiline={true}
+                                                        numberOfLines={4}
+                                                    />
+                                                </View>
+
+                                                <Text style={[styles.fieldText, { color: '#000' }]}>Required PPE:</Text>
+                                                <View style={styles.inputField}>
+                                                    <TextInput
+                                                        style={styles.inputText}
+                                                        value={steps[currentStep].ppe}
+                                                        onChangeText={(text) => updateStepField('ppe', text)}
+                                                        placeholder="Enter required PPE"
+                                                        placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
+                                                    />
+                                                </View>
+
+                                                <Text style={[styles.fieldText, { color: '#000' }]}>Risk Rating:</Text>
+                                                <View style={styles.inputField}>
+                                                    <TextInput
+                                                        style={styles.inputText}
+                                                        value={steps[currentStep].riskRating}
+                                                        onChangeText={(text) => updateStepField('riskRating', text)}
+                                                        placeholder="Enter risk rating"
+                                                        placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
+                                                    />
+                                                </View>
+
+                                                <Text style={[styles.fieldText, { color: '#000' }]}>Notes/Comments:</Text>
+                                                <View style={[styles.inputField, { height: 100, alignItems: 'flex-start' }]}>
+                                                    <TextInput
+                                                        style={[styles.inputText, { height: '100%', textAlignVertical: 'top' }]}
+                                                        value={steps[currentStep].notes}
+                                                        onChangeText={(text) => updateStepField('notes', text)}
+                                                        placeholder="Enter additional notes"
+                                                        placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
+                                                        multiline={true}
+                                                        numberOfLines={4}
+                                                    />
+                                                </View>
+                                            </View>
+
+                                            {/* Step Indicators at the bottom */}
+                                            <View style={styles.stepIndicatorContainer}>
+                                                {steps.map((_, index) => (
+                                                    <View
+                                                        key={index}
+                                                        style={[
+                                                            styles.stepDot,
+                                                            {
+                                                                backgroundColor: currentStep === index 
+                                                                    ? '#FFD700' 
+                                                                    : isDarkMode ? '#555' : '#ccc'
+                                                            }
+                                                        ]}
+                                                    />
+                                                ))}
+                                            </View>
+                                        </View>
+                                    </View>
+                                </Card>
+
                                 {/* Personnel Section */}
                                 <Card isDarkMode={isDarkMode} style={{ marginTop: 10 }}>
                                     <View style={styles.cardContainerContent}>
@@ -492,17 +794,19 @@ const AddJsaForm = () => {
                                             <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000', marginBottom: 0 }]}>
                                                 Personnel
                                             </Text>
-                                            <TouchableOpacity
-                                                style={[styles.addPersonnelButton, { borderColor: isDarkMode ? '#fff' : '#000' }]}
-                                                onPress={addPersonnel}
-                                                accessibilityRole="button"
-                                                accessibilityLabel="Add new personnel"
-                                                accessibilityHint="Adds a new personnel entry form"
-                                            >
-                                                <Text style={styles.addPersonnelText}>
-                                                    Add Personnel
-                                                </Text>
-                                            </TouchableOpacity>
+                                            {personnel.length > 0 && (
+                                                <TouchableOpacity
+                                                    style={[styles.addPersonnelButton, { borderColor: isDarkMode ? '#fff' : '#000' }]}
+                                                    onPress={addPersonnel}
+                                                    accessibilityRole="button"
+                                                    accessibilityLabel="Add additional personnel"
+                                                    accessibilityHint="Adds another personnel entry form"
+                                                >
+                                                    <Text style={styles.addPersonnelText}>
+                                                        Add Personnel
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            )}
                                         </View>
 
                                         {personnel.map((person, index) => (
@@ -511,24 +815,26 @@ const AddJsaForm = () => {
                                                 style={[styles.personnelItem, { borderColor: isDarkMode ? '#fff' : '#E0E0E0' }]}
                                                 accessibilityLabel={`Personnel entry ${index + 1}`}
                                             >
-                                                <TouchableOpacity
-                                                    style={styles.removePersonnelButton}
-                                                    onPress={() => removePersonnel(index)}
-                                                    accessibilityLabel={`Remove personnel ${index + 1}`}
-                                                >
-                                                    <Text style={styles.removePersonnelText}>×</Text>
-                                                </TouchableOpacity>
+                                                {personnel.length > 1 && (
+                                                    <TouchableOpacity
+                                                        style={styles.removePersonnelButton}
+                                                        onPress={() => removePersonnel(index)}
+                                                        accessibilityLabel={`Remove personnel ${index + 1}`}
+                                                    >
+                                                        <Text style={styles.removePersonnelText}>×</Text>
+                                                    </TouchableOpacity>
+                                                )}
 
                                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
                                                     <View style={{ flex: 1 }}>
                                                         <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                                            Name
+                                                            Name:
                                                         </Text>
                                                         <View style={styles.inputField}>
                                                             <TextInput
                                                                 placeholder="Enter name"
                                                                 placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
-                                                                style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                                style={[styles.inputText, { color: '#000' }]}
                                                                 value={person.personName}
                                                                 onChangeText={(text) => updatePersonnel(index, 'personName', text)}
                                                                 accessibilityLabel="Person name input"
@@ -538,13 +844,13 @@ const AddJsaForm = () => {
 
                                                     <View style={{ flex: 1 }}>
                                                         <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                                            Role
+                                                            Role:
                                                         </Text>
                                                         <View style={styles.inputField}>
                                                             <TextInput
                                                                 placeholder="Enter role"
                                                                 placeholderTextColor={isDarkMode ? '#999' : '#aaa'}
-                                                                style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                                                style={[styles.inputText, { color: '#000' }]}
                                                                 value={person.role}
                                                                 onChangeText={(text) => updatePersonnel(index, 'role', text)}
                                                                 accessibilityLabel="Role input"
@@ -570,16 +876,20 @@ const AddJsaForm = () => {
                             </View>
 
                             <TouchableOpacity
-                                style={[styles.finishButton, { borderColor: isDarkMode ? '#fff' : '#000' }]}
-                                onPress={() => {
-                                    // Add your finish form logic here
-                                    console.log('Finishing JSA Form...');
-                                }}
+                                style={[
+                                    styles.finishButton, 
+                                    { 
+                                        borderColor: isDarkMode ? '#fff' : '#000',
+                                        opacity: isSubmitting ? 0.7 : 1 
+                                    }
+                                ]}
+                                onPress={handleSubmit}
+                                disabled={isSubmitting}
                                 accessibilityRole="button"
                                 accessibilityLabel="Finish JSA Form"
                             >
                                 <Text style={styles.finishButtonText}>
-                                    Finish JSA Form
+                                    {isSubmitting ? 'Saving...' : 'Finish JSA Form'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -610,8 +920,10 @@ const AddJsaForm = () => {
                             ref={signatureRef}
                             onOK={handleSignature}
                             onEmpty={() => console.log('Empty')}
-                            autoClear={true}
+                            autoClear={false}
                             descriptionText="Sign here"
+                            imageType="image/png"
+                            dataURL={signatureDataUrl}
                             webStyle={`
                                 .m-signature-pad {
                                     margin: 0;
