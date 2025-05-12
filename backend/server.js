@@ -15,6 +15,7 @@ const compression = require('compression');
 const path = require('path');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, DeleteCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { restart } = require('nodemon');
 
 dotenv.config();
 
@@ -151,11 +152,12 @@ try {
     console.warn('Warning: verifyPassword schema not found. Password verification will be disabled.');
 }
 
-let { InvoiceFormSchema, JSAFormSchema } = {};
+let { InvoiceFormSchema, JSAFormSchema, CapillaryFormSchema } = {};
 try {
     const dynamoDBSchemas = require('./schemas/dynamoDB');
     InvoiceFormSchema = dynamoDBSchemas.InvoiceFormSchema;
     JSAFormSchema = dynamoDBSchemas.JSAFormSchema;
+    CapillaryFormSchema = dynamoDBSchemas.CapillaryFormSchema;
 } catch (error) {
     console.log("Error loading dynamoDBSchemas. Check: server.js or schemas/dynamoDB.js in Backend: ", error);
     console.warn("DynamoDB schemas will not be available.");
@@ -663,6 +665,90 @@ app.post('/api/dynamoDB/createJSAForm', validateRequest(JSAFormSchema), async (r
         next({
             status: 500,
             message: 'Failed to create Jsa form',
+            code: 'DB_ERROR',
+            error: error.message
+        });
+    }
+});
+
+//** CAPILLARY FORMS */
+
+//Get all items from CapillaryForm Table
+app.get('/api/dynamoDB/getAllCapillaryForms', async (req, res, next) => {
+    try{
+        const { Items } = await docClient.send(new ScanCommand({
+            TableName: 'CapillaryForm-ghr672m57fd2re7tckfmfby2e4-dev',
+        }));
+
+        if (!Items) {
+            return res.status(404).json({
+                error: {
+                    message: 'No capillary forms found',
+                    code: 'NOT_FOUND'
+                }
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            count: Items.length,
+            data: Items
+        });
+    } catch (error) {
+        console.error("Error getting all Capillary Forms:", error);
+        next({
+            status: 500,
+            message: 'Failed to retrieve capillary forms',
+            code: 'DB_ERROR',
+            error: error.message
+        });
+    }
+});
+
+app.post('/api/dynamoDB/createCapillaryForm', validateRequest(CapillaryFormSchema), async (req, res, next) => {
+    try{
+        const params = {
+            TableName: 'CapillaryForm-ghr672m57fd2re7tckfmfby2e4-dev',
+            Item:{
+                WorkTicketID: req.body.WorkTicketID,
+                Date: req.body.Date,
+                Customer: req.body.Customer,
+                WellName: req.body.WellName,
+                TypeOfJob: req.body.TypeOfJob,
+                VisualConfirmation: req.body.VisualConfirmation,
+                IntervalPumping: req.body.IntervalPumping,
+                PressureWhilePumping: req.body.PressureWhilePumping,
+                PressureBleed: req.body.PressureBleed,
+                CapillaryFlush: req.body.CapillaryFlush,
+                ManifoldStatus: req.body.ManifoldStatus,
+                LineTest: req.body.LineTest,
+                CapillarySize: req.body.CapillarySize,
+                Metallurgy: req.body.Metallurgy,
+                Length: req.body.Length,
+                FluidPumped: req.body.FluidPumped,
+                TotalGallons: req.body.TotalGallons,
+                Notes: req.body.Notes,
+                Files: req.body.Files,
+                FinalProductFile: req.body.FinalProductFile,
+                TechnicianName: req.body.TechnicianName,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                _lastChangedAt: new Date().toISOString(),
+                _version: 2,
+                _typename: 'Capillary Form'
+            }
+        };
+        await docClient.send(new PutCommand(params));
+        res.status(201).json({
+            success: true,
+            message: 'Capillary form created successfully',
+            data: params.Item
+        });
+    } catch (error) {
+        console.error("Error creating capillary form:", error);
+        next({
+            status: 500,
+            message: 'Failed to create capillary form',
             code: 'DB_ERROR',
             error: error.message
         });

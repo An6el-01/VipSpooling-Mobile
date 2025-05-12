@@ -197,15 +197,17 @@ const MyForms = () => {
 
             console.log('Fetching forms with token:', authState.accessToken.substring(0, 10) + '...');
 
-            // Fetch both types of forms in parallel with proper error handling
-            const [invoiceResponse, jsaResponse] = await Promise.all([
+            // Fetch all three types of forms in parallel with proper error handling
+            const [invoiceResponse, jsaResponse, capillaryResponse] = await Promise.all([
                 fetch(endpoints.getAllInvoiceForms, { headers }),
-                fetch(endpoints.getAllJSAForms, { headers })
+                fetch(endpoints.getAllJSAForms, { headers }),
+                fetch(endpoints.getAllCapillaryForms, { headers })
             ]);
 
             // Check responses and parse JSON
             let invoiceData = { data: [] };
             let jsaData = { data: [] };
+            let capillaryData = { data: [] };
 
             if (invoiceResponse.ok) {
                 invoiceData = await invoiceResponse.json();
@@ -219,8 +221,14 @@ const MyForms = () => {
                 console.error('JSA forms fetch failed:', await jsaResponse.text());
             }
 
+            if (capillaryResponse.ok) {
+                capillaryData = await capillaryResponse.json();
+            } else {
+                console.error('Capillary forms fetch failed:', await capillaryResponse.text());
+            }
+
             // Only update the forms if at least one request was successful
-            if (invoiceResponse.ok || jsaResponse.ok) {
+            if (invoiceResponse.ok || jsaResponse.ok || capillaryResponse.ok) {
                 // Combine and mark the forms by type, ensuring proper structure
                 const combinedForms = [
                     ...(invoiceData.data || []).map(form => ({
@@ -231,12 +239,17 @@ const MyForms = () => {
                         ...form,
                         formType: 'jsa',
                         _typename: form._typename || 'JSA Form'
+                    })),
+                    ...(capillaryData.data || []).map(form => ({
+                        ...form,
+                        formType: 'capillary',
+                        _typename: form._typename || 'Capillary Form'
                     }))
                 ];
 
                 dispatch(setForms(combinedForms));
             } else {
-                // If both requests failed, set error but keep existing forms
+                // If all requests failed, set error but keep existing forms
                 throw new Error('Failed to fetch new forms');
             }
         } catch (err) {
@@ -261,9 +274,22 @@ const MyForms = () => {
     // Filter forms based on search query
     const filteredForms = forms.filter(form => {
         const searchLower = searchQuery.toLowerCase();
-        const searchableText = form.formType === 'invoice'
-            ? `${form.WorkTicketID || ''} ${form._typename || ''}`
-            : `${form.CustomerName || ''} ${form._typename || ''}`;
+        let searchableText = '';
+        
+        switch (form.formType) {
+            case 'invoice':
+                searchableText = `${form.WorkTicketID || ''} ${form._typename || ''}`;
+                break;
+            case 'jsa':
+                searchableText = `${form.CustomerName || ''} ${form._typename || ''}`;
+                break;
+            case 'capillary':
+                searchableText = `${form.Customer || ''} ${form.WellName || ''} ${form._typename || ''}`;
+                break;
+            default:
+                searchableText = form.WorkTicketID || '';
+        }
+        
         return searchableText.toLowerCase().includes(searchLower);
     });
 
@@ -351,20 +377,28 @@ const MyForms = () => {
                                     <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
                                         <View style={styles.activityDetails}>
                                             <Text style={[styles.activityText, {color: isDarkMode ? '#fff' : '#000'}]}>
-                                                {form._typename || (form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form')}
+                                                {form._typename || (form.formType === 'invoice' ? 'Invoice Form' : form.formType === 'jsa' ? 'JSA Form' : 'Capillary Form')}
                                             </Text>
                                             <Text style={[styles.activityText, {fontSize: 12 }]}>
-                                                {form.formType === 'invoice' 
-                                                    ? `${form.InvoiceDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`
-                                                    : `${form.FormDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`
-                                                }
+                                                {(() => {
+                                                    switch (form.formType) {
+                                                        case 'invoice':
+                                                            return `${form.InvoiceDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`;
+                                                        case 'jsa':
+                                                            return `${form.FormDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`;
+                                                        case 'capillary':
+                                                            return `${form.Date || 'No Date'} - ${form.WorkTicketID || 'No ID'}`;
+                                                        default:
+                                                            return 'Unknown Form Type';
+                                                    }
+                                                })()}
                                             </Text>
                                         </View>
                                         <TouchableOpacity onPress={() => {
                                             navigation.navigate('ViewForm', { 
                                                 formData: {
                                                     ...form,
-                                                    _typename: form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form'
+                                                    _typename: form.formType === 'invoice' ? 'Invoice Form' : form.formType === 'jsa' ? 'JSA Form' : 'Capillary Form'
                                                 }
                                             });
                                         }}>

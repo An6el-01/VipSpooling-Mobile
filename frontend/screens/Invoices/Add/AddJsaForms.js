@@ -517,7 +517,7 @@ const AddJsaForm = () => {
             Alert.alert(
                 'Success',
                 'JSA Form saved successfully!',
-                [{ text: 'OK', onPress: () => navigation.goBack() }]
+                [{ text: 'OK', onPress: () => navigation.navigate('Forms') }]
             );
 
         } catch (error) {

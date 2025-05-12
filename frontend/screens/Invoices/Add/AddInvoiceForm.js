@@ -284,12 +284,20 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',
-        backgroundColor: '#ddd',
+        backgroundColor: '#FFD700',
+        borderWidth: 1,
+        borderColor: '#000',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
     },
     addRowButtonText: {
         fontSize: 16,
         fontWeight: '600',
         color: '#000',
+        letterSpacing: 0.5,
     },
     finishButton: {
         backgroundColor: '#FFD700',
@@ -914,14 +922,27 @@ const AddInvoiceForm = () => {
 
             const result = await response.json();
             console.log('Form submitted successfully:', result);
-            navigation.goBack();
+            Alert.alert(
+                'Success',
+                'Invoice form has been created successfully!',
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => navigation.navigate('Forms')
+                    }
+                ]
+            );
 
         } catch (error) {
             console.error('Error submitting form:', error);
             Alert.alert(
                 'Error',
-                `Failed to submit the form: ${error.message}`,
-                [{ text: 'OK' }]
+                `Failed to submit the form: ${error.message}. Please try again.`,
+                [
+                    {
+                        text: 'OK'
+                    }
+                ]
             );
         }
     };
@@ -1789,10 +1810,10 @@ const AddInvoiceForm = () => {
                                     </Modal>
 
                                     <TouchableOpacity
-                                        style={[styles.addRowButton, { backgroundColor: isDarkMode ? '#444' : '#ddd' }]}
+                                        style={styles.addRowButton}
                                         onPress={addConsumableRow}
                                     >
-                                        <Text style={[styles.addRowButtonText, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                        <Text style={styles.addRowButtonText}>
                                             Add Row
                                         </Text>
                                     </TouchableOpacity>

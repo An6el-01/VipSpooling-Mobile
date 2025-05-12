@@ -63,7 +63,40 @@ const JSAFormSchema = Joi.object({
     _typename: Joi.string().optional(),
 });
 
+
+const CapillaryFormSchema = Joi.object({
+    WorkTicketID: Joi.string().required(),
+    Date: Joi.string().required(),
+    Customer: Joi.string().required(),
+    WellName: Joi.string().optional(),
+    TypeOfJob: Joi.string().optional(),
+    VisualConfirmation: Joi.string().optional(),
+    IntervalPumping: Joi.string().optional(),
+    PressureWhilePumping: Joi.string().optional(),
+    PressureBleed: Joi.string().optional(),
+    CapillaryFlush: Joi.string().optional(),
+    ManifoldStatus: Joi.string().optional(),
+    LineTest: Joi.string().optional(),
+    CapillarySize: Joi.string().optional(),
+    Metallurgy: Joi.string().optional(),
+    Length: Joi.string().optional(),
+    FluidPumped: Joi.string().optional(),
+    TotalGallons: Joi.string().optional(),
+    Notes: Joi.string().optional(),
+    Files: Joi.array().items(Joi.string()).optional(),
+    FinalProductFile: Joi.string().optional(),
+    TechnicianName: Joi.string().optional(),
+    createdAt: Joi.string().optional(),
+    updatedAt: Joi.string().optional(),
+    _lastChangedAt: Joi.number().optional(),
+    _ttl: Joi.number().optional(),
+    _version: Joi.number().optional(),
+    __typename: Joi.string().optional(),
+    _deleted: Joi.boolean().optional(),
+});
+
 module.exports = {
     InvoiceFormSchema,
     JSAFormSchema,
+    CapillaryFormSchema
 };
