@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+bower_components/
+
+# Environment variables
+.env
+.env*.local
+.env.*.local
+
+# Build and runtime artifacts
+dist/
+build/
+web-build/
+.expo/
+expo-env.d.ts
+
+# Debug logs
+logs/
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.metro-health-check*
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing and coverage
+coverage/
+
+# Misc
+*.pem
+*.pid
+*.seed
+*.pid.lock
+
+# Package manager locks (uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock 
