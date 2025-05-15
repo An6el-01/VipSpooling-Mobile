@@ -15,6 +15,7 @@
     "@aws-sdk/client-lambda": "^3.797.0",
     "@aws-sdk/client-s3": "^3.758.0",
     "@aws-sdk/lib-dynamodb": "^3.789.0",
+    "@emailjs/nodejs": "^5.0.2",
     "aws-sdk": "^2.1692.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

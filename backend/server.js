@@ -3,10 +3,13 @@ const {
     CognitoIdentityProviderClient, 
     AdminGetUserCommand, 
     ListUsersCommand,
-    AdminListGroupsForUserCommand 
+    AdminListGroupsForUserCommand,
+    AdminCreateUserCommand,
+    AdminAddUserToGroupCommand
 } = require('@aws-sdk/client-cognito-identity-provider');
 const { S3Client, ListObjectsV2Command, ListBucketsCommand } = require('@aws-sdk/client-s3');
 const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
+const emailjs = require('@emailjs/nodejs');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -22,9 +25,31 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// EmailJS Configuration
+const EMAILJS_SERVICE_ID = 'service_fh19mmh';
+const EMAILJS_TEMPLATE_ID = 'template_30fa49m';
+const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY;
+const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
+
+// Initialize EmailJS with server-side configuration
+emailjs.init({
+    publicKey: EMAILJS_PUBLIC_KEY,
+    privateKey: EMAILJS_PRIVATE_KEY,
+    origin: 'api.emailjs.com' // Remove 'https://' from the origin
+});
+
+// CORS configuration
+app.use(cors({
+    origin: process.env.FRONTEND_URL || '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
 // Security middleware
-app.use(helmet());
-app.use(cors());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(compression());
@@ -192,52 +217,7 @@ app.post('/api/users/verify-temp-password',
     }
 );
 
-// Get all users from Cognito
-app.get('/api/users', async (req, res) => {
-    try {
-        const params = {
-            UserPoolId: process.env.USER_POOL_ID,
-            Limit: 60 // Adjust this number based on your needs
-        };
 
-        const command = new ListUsersCommand(params);
-        const response = await cognitoClient.send(command);
-
-        // Transform the users data to include only necessary information
-        const usersPromises = response.Users.map(async user => {
-            const attributes = {};
-            user.Attributes.forEach(attr => {
-                attributes[attr.Name] = attr.Value;
-            });
-
-            // Get user groups
-            const groups = await getUserGroups(user.Username);
-            
-            console.log('UserName: ', user.Username);    
-            console.log('Name: ', attributes.name);
-            console.log("Email: ", attributes.email);
-            console.log("Groups: ", groups);
-
-            return {
-                username: user.Username,
-                name: attributes.name || attributes.email,
-                email: attributes.email,
-                groups: groups,
-                status: user.UserStatus,
-                enabled: user.Enabled,
-                createdAt: user.UserCreateDate,
-                lastModified: user.UserLastModifiedDate
-            };
-        });
-
-        // Wait for all user data to be processed
-        const users = await Promise.all(usersPromises);
-        res.status(200).json({ users });
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ error: 'Failed to fetch users' });
-    }
-});
 
 // Get all templates from S3
 app.get('/api/templates', async (req, res) => {
@@ -355,6 +335,150 @@ app.get('/api/pricingplans', async (req, res) => {
     } catch (error) {
         console.error('Error fetching pricing plans:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+
+//** COGNITO */
+
+// Get all users from Cognito
+app.get('/api/users', async (req, res) => {
+    try {
+        const params = {
+            UserPoolId: process.env.USER_POOL_ID,
+            Limit: 60 // Adjust this number based on your needs
+        };
+
+        const command = new ListUsersCommand(params);
+        const response = await cognitoClient.send(command);
+
+        // Transform the users data to include only necessary information
+        const usersPromises = response.Users.map(async user => {
+            const attributes = {};
+            user.Attributes.forEach(attr => {
+                attributes[attr.Name] = attr.Value;
+            });
+
+            // Get user groups
+            const groups = await getUserGroups(user.Username);
+            
+            console.log('UserName: ', user.Username);    
+            console.log('Name: ', attributes.name);
+            console.log("Email: ", attributes.email);
+            console.log("Groups: ", groups);
+
+            return {
+                username: user.Username,
+                name: attributes.name || attributes.email,
+                email: attributes.email,
+                groups: groups,
+                status: user.UserStatus,
+                enabled: user.Enabled,
+                createdAt: user.UserCreateDate,
+                lastModified: user.UserLastModifiedDate
+            };
+        });
+
+        // Wait for all user data to be processed
+        const users = await Promise.all(usersPromises);
+        res.status(200).json({ users });
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// Create a new user in Cognito
+app.post('/api/users/create', async (req, res) => {
+    try {
+        const { email, name, role } = req.body;
+
+        // Validate input
+        if (!email || !name || !role) {
+            return res.status(400).json({ 
+                error: 'Missing required fields: email, name, and role are required' 
+            });
+        }
+
+        // Generate a temporary password
+        const temporaryPassword = 'Welcome1!'; // You can make this more secure by generating a random password
+
+        // Create user in Cognito
+        const createUserParams = {
+            UserPoolId: process.env.USER_POOL_ID,
+            Username: email,
+            TemporaryPassword: temporaryPassword,
+            UserAttributes: [
+                {
+                    Name: 'email',
+                    Value: email
+                },
+                {
+                    Name: 'name',
+                    Value: name
+                },
+                {
+                    Name: 'email_verified',
+                    Value: 'true'
+                }
+            ],
+            MessageAction: 'SUPPRESS' // Suppress Cognito's automatic email
+        };
+
+        const createUserCommand = new AdminCreateUserCommand(createUserParams);
+        await cognitoClient.send(createUserCommand);
+
+        // Add user to specified group
+        const addToGroupParams = {
+            UserPoolId: process.env.USER_POOL_ID,
+            Username: email,
+            GroupName: role
+        };
+
+        const addToGroupCommand = new AdminAddUserToGroupCommand(addToGroupParams);
+        await cognitoClient.send(addToGroupCommand);
+
+        // Send welcome email with temporary password
+        try {
+            const templateParams = {
+                to_name: name,
+                user_email: email,
+                temp_password: temporaryPassword,
+                user_role: role,
+                login_url: 'https://customgoformz.com'
+            };
+
+            console.log('Sending email with params:', {
+                ...templateParams,
+                temp_password: '[HIDDEN]'
+            });
+
+            const emailResponse = await emailjs.send(
+                EMAILJS_SERVICE_ID,
+                EMAILJS_TEMPLATE_ID,
+                templateParams
+            );
+
+            console.log('Welcome email sent successfully:', emailResponse);
+        } catch (emailError) {
+            console.error('Error sending welcome email:', emailError);
+            // Don't fail the request if email fails, but log it
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'User created successfully and welcome email sent',
+            data: {
+                email,
+                name,
+                role
+            }
+        });
+    } catch (error) {
+        console.error('Error creating user:', error);
+        res.status(500).json({ 
+            error: error.message || 'Failed to create user' 
+        });
     }
 });
 
@@ -754,6 +878,9 @@ app.post('/api/dynamoDB/createCapillaryForm', validateRequest(CapillaryFormSchem
         });
     }
 });
+
+
+
 // Error handling middleware
 app.use(errorHandler);
 
