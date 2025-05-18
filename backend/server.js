@@ -5,11 +5,11 @@ const {
     ListUsersCommand,
     AdminListGroupsForUserCommand,
     AdminCreateUserCommand,
-    AdminAddUserToGroupCommand
+    AdminAddUserToGroupCommand,
+    AdminSetUserPasswordCommand
 } = require('@aws-sdk/client-cognito-identity-provider');
 const { S3Client, ListObjectsV2Command, ListBucketsCommand } = require('@aws-sdk/client-s3');
 const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
-const emailjs = require('@emailjs/nodejs');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -24,19 +24,6 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// EmailJS Configuration
-const EMAILJS_SERVICE_ID = 'service_fh19mmh';
-const EMAILJS_TEMPLATE_ID = 'template_30fa49m';
-const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY;
-const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
-
-// Initialize EmailJS with server-side configuration
-emailjs.init({
-    publicKey: EMAILJS_PUBLIC_KEY,
-    privateKey: EMAILJS_PRIVATE_KEY,
-    origin: 'api.emailjs.com' // Remove 'https://' from the origin
-});
 
 // CORS configuration
 app.use(cors({
@@ -345,8 +332,8 @@ app.get('/api/pricingplans', async (req, res) => {
 app.get('/api/users', async (req, res) => {
     try {
         const params = {
-            UserPoolId: process.env.USER_POOL_ID,
-            Limit: 60 // Adjust this number based on your needs
+            UserPoolId: 'us-east-1_Sk6JKaM2w',
+            Limit: 60
         };
 
         const command = new ListUsersCommand(params);
@@ -401,11 +388,11 @@ app.post('/api/users/create', async (req, res) => {
         }
 
         // Generate a temporary password
-        const temporaryPassword = 'Welcome1!'; // You can make this more secure by generating a random password
+        const temporaryPassword = Math.random().toString(36).slice(-8) + 'Aa1!'; // Random password that meets requirements
 
-        // Create user in Cognito
+        // Create user in Cognito with email verification enabled
         const createUserParams = {
-            UserPoolId: process.env.USER_POOL_ID,
+            UserPoolId: 'us-east-1_Sk6JKaM2w',
             Username: email,
             TemporaryPassword: temporaryPassword,
             UserAttributes: [
@@ -419,11 +406,17 @@ app.post('/api/users/create', async (req, res) => {
                 },
                 {
                     Name: 'email_verified',
-                    Value: 'true'
+                    Value: 'false' // Set to false to trigger verification
                 }
             ],
-            MessageAction: 'SUPPRESS' // Suppress Cognito's automatic email
+            DesiredDeliveryMediums: ['EMAIL'],
+            ForceAliasCreation: false
         };
+
+        console.log('Creating user with params:', {
+            ...createUserParams,
+            TemporaryPassword: '[HIDDEN]'
+        });
 
         const createUserCommand = new AdminCreateUserCommand(createUserParams);
         await cognitoClient.send(createUserCommand);
@@ -438,36 +431,9 @@ app.post('/api/users/create', async (req, res) => {
         const addToGroupCommand = new AdminAddUserToGroupCommand(addToGroupParams);
         await cognitoClient.send(addToGroupCommand);
 
-        // Send welcome email with temporary password
-        try {
-            const templateParams = {
-                to_name: name,
-                user_email: email,
-                temp_password: temporaryPassword,
-                user_role: role,
-                login_url: 'https://customgoformz.com'
-            };
-
-            console.log('Sending email with params:', {
-                ...templateParams,
-                temp_password: '[HIDDEN]'
-            });
-
-            const emailResponse = await emailjs.send(
-                EMAILJS_SERVICE_ID,
-                EMAILJS_TEMPLATE_ID,
-                templateParams
-            );
-
-            console.log('Welcome email sent successfully:', emailResponse);
-        } catch (emailError) {
-            console.error('Error sending welcome email:', emailError);
-            // Don't fail the request if email fails, but log it
-        }
-
         res.status(201).json({
             success: true,
-            message: 'User created successfully and welcome email sent',
+            message: 'User created successfully. Invitation email has been sent.',
             data: {
                 email,
                 name,

@@ -48,6 +48,16 @@ export const auth = {
                 throw new Error(data.message || data.__type || 'Authentication failed');
             }
 
+            // Handle NEW_PASSWORD_REQUIRED challenge
+            if (data.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
+                return {
+                    challengeName: 'NEW_PASSWORD_REQUIRED',
+                    session: data.Session,
+                    userAttributes: JSON.parse(data.ChallengeParameters.userAttributes || '{}'),
+                    requiredAttributes: JSON.parse(data.ChallengeParameters.requiredAttributes || '[]')
+                };
+            }
+
             if (!data.AuthenticationResult) {
                 throw new Error('No authentication result received');
             }
@@ -70,6 +80,50 @@ export const auth = {
             } else if (error.message.includes('UserNotConfirmedException')) {
                 throw new Error('Please verify your email first');
             }
+            throw error;
+        }
+    },
+
+    completeNewPassword: async (username, session, newPassword) => {
+        try {
+            const params = {
+                ChallengeName: 'NEW_PASSWORD_REQUIRED',
+                ClientId: CLIENT_ID,
+                ChallengeResponses: {
+                    USERNAME: username,
+                    NEW_PASSWORD: newPassword
+                },
+                Session: session
+            };
+
+            const response = await fetch(
+                `https://cognito-idp.${COGNITO_REGION}.amazonaws.com`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-amz-json-1.1',
+                        'X-Amz-Target': 'AWSCognitoIdentityProviderService.RespondToAuthChallenge'
+                    },
+                    body: JSON.stringify(params)
+                }
+            );
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || data.__type || 'Failed to set new password');
+            }
+
+            return {
+                isSignedIn: true,
+                tokens: {
+                    accessToken: data.AuthenticationResult.AccessToken,
+                    idToken: data.AuthenticationResult.IdToken,
+                    refreshToken: data.AuthenticationResult.RefreshToken
+                }
+            };
+        } catch (error) {
+            console.error('Complete new password error:', error);
             throw error;
         }
     },

@@ -1,30 +1,13 @@
-import { AWS_REGION, USER_POOL_ID, USER_POOL_WEB_CLIENT_ID } from '@env';
-
-// Log configuration values (remove in production)
-console.log('AWS Configuration:', {
-    region: AWS_REGION,
-    userPoolId: USER_POOL_ID,
-    userPoolClientId: USER_POOL_WEB_CLIENT_ID
-});
-
-// Verify configuration values
-if (!AWS_REGION || !USER_POOL_ID || !USER_POOL_WEB_CLIENT_ID) {
-    console.error('Missing AWS configuration values:', {
-        hasRegion: !!AWS_REGION,
-        hasUserPoolId: !!USER_POOL_ID,
-        hasUserPoolClientId: !!USER_POOL_WEB_CLIENT_ID
-    });
-}
-
 // AWS Configuration for Amplify v6
 export const awsConfig = {
     Auth: {
         Cognito: {
-            userPoolId: USER_POOL_ID,
-            userPoolClientId: USER_POOL_WEB_CLIENT_ID,
+            userPoolId: 'us-east-1_Sk6JKaM2w',
+            userPoolClientId: '3iefeb0g06d7te07ekdonnjlgn',
             signUpVerificationMethod: 'code',
+            authenticationFlowType: 'USER_PASSWORD_AUTH'
         },
-        region: AWS_REGION
+        region: 'us-east-1'
     },
     Analytics: {
         disabled: true
@@ -32,10 +15,10 @@ export const awsConfig = {
     API: {
         GraphQL: {
             endpoint: null,
-            region: AWS_REGION
+            region: 'us-east-1'
         }
     },
     Storage: {
-        region: AWS_REGION
+        region: 'us-east-1'
     }
 };

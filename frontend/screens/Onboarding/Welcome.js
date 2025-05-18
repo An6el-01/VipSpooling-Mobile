@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ImageBackgr
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector } from '../../hooks/hooks';
 import Card from '../../components/Card';
-import { signIn } from 'aws-amplify/auth';
+import { auth } from '../../services/auth';  // Import the auth service instead of Amplify
 
 const styles = StyleSheet.create({
     background: {
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
         marginBottom: 25,
         paddingHorizontal: 20,
     },
-    inputField: {
+    emailInput: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#EAE7E7',
@@ -51,8 +51,7 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         marginBottom: 22,
         width: '100%',
-        borderWidth: 1,
-        borderColor: '#000',
+        borderWidth: 1.3,
     },
     inputIcon: {
         width: 24,
@@ -64,6 +63,18 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 16,
         color: '#000',
+    },
+    inputField: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#EAE7E7',
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        paddingVertical: 14,
+        marginBottom: 22,
+        width: '100%',
+        borderWidth: 1,
+        borderColor: '#000',
     },
     submitButton: {
         backgroundColor: '#FFD700',
@@ -117,6 +128,7 @@ const styles = StyleSheet.create({
 const Welcome = () => {
     const navigation = useNavigation();
     const isDarkMode = useAppSelector((state) => state.theme.isDarkMode);
+    const [email, setEmail] = useState('');
     const [temporaryPassword, setTemporaryPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -126,8 +138,16 @@ const Welcome = () => {
         : require('../../assets/LightMode.jpg');
 
     const handleSubmit = async () => {
-        if (!temporaryPassword) {
-            setError('Please enter your temporary password');
+        if (!email || !temporaryPassword) {
+            setError('Please enter both email and temporary password');
+            return;
+        }
+
+        // Clean up email address
+        const cleanEmail = email.replace('mailto:', '').trim();
+
+        if (!cleanEmail.includes('@')) {
+            setError('Please enter a valid email address');
             return;
         }
 
@@ -135,25 +155,35 @@ const Welcome = () => {
         setError('');
 
         try {
-            // Sign in with temporary password using v6 syntax
-            const { nextStep, signInOutput } = await signIn({
-                username: 'a.m.salinas1901@gmail.com',
-                password: temporaryPassword
-            });
+            console.log('Attempting sign in for:', cleanEmail);
             
-            // Check if password change is required
-            if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD') {
+            const result = await auth.signIn(cleanEmail, temporaryPassword);
+            console.log('Sign in response:', result);
+
+            if (result.challengeName === 'NEW_PASSWORD_REQUIRED') {
+                // Navigate to SetUp with the session
                 navigation.navigate('SetUp', { 
-                    email: 'a.m.salinas1901@gmail.com',
-                    signInOutput // Pass the signInOutput for completing the challenge
+                    email: cleanEmail,
+                    temporaryPassword: temporaryPassword,
+                    session: result.session,
+                    userAttributes: result.userAttributes
                 });
-            } else {
-                // If user has already set up their password, send them to sign in
+            } else if (result.isSignedIn) {
+                // User already has a permanent password
                 navigation.navigate('SignIn');
             }
         } catch (err) {
-            setError('Invalid temporary password. Please try again.');
-            console.error('Welcome-handleSubmit() => Auth failed:', err);
+            console.error('Welcome-handleSubmit() => Auth error:', err);
+            
+            if (err.message?.includes('Incorrect username or password')) {
+                setError('The temporary password is incorrect. Please check your email and try again.');
+            } else if (err.message?.includes('Password attempts exceeded')) {
+                setError('Too many incorrect attempts. Please try again later.');
+            } else if (err.message?.includes('User does not exist')) {
+                setError('This account does not exist. Please check your email address.');
+            } else {
+                setError(err.message || 'There was a problem signing in. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
@@ -176,12 +206,27 @@ const Welcome = () => {
                             Welcome to VIP Spooling
                         </Text>
 
-                      
-
                         {/* Card Component */}
                         <Card isDarkMode={isDarkMode}>
                             <View style={styles.cardContentContainer}>
-                                {/* TEMPORARY PASSWORD INPUT */}
+                                {/* Email Input */}
+                                <View style={[styles.emailInput, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                                    <Image 
+                                        source={require('../../assets/mail.png')} 
+                                        style={[styles.inputIcon, { tintColor: isDarkMode ? '#fff' : '#000' }]} 
+                                    />
+                                    <TextInput
+                                        placeholder="Enter your email"
+                                        placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
+                                        style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                    />
+                                </View>
+
+                                {/* Temporary Password Input */}
                                 <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
                                     <Image 
                                         source={require('../../assets/padlock.png')} 
@@ -215,7 +260,7 @@ const Welcome = () => {
                                 {/* EXISTING ACCOUNT SECTION */}
                                 <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                                     <Text style={[styles.existingAccountText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                            Already Have An Account? 
+                                        Already Have An Account? 
                                     </Text>
                                     <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
                                         <Text style={styles.clickableText}>Sign In</Text>

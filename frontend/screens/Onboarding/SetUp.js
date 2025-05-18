@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ImageBackground, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Card from '../../components/Card';
-import { useAppSelector } from '../../hooks/hooks';
-import { signIn, confirmSignIn, updatePassword } from 'aws-amplify/auth';
+import { useAppSelector, useAppDispatch } from '../../hooks/hooks';
+import { auth } from '../../services/auth';
+import { setAuth, setUserAttributes } from '../../store/authSlice';
 
 const styles = StyleSheet.create({
     background:{
@@ -114,10 +115,12 @@ const SetUp = () => {
     const isDarkMode = useAppSelector((state) => state.theme.isDarkMode);
     const [name, setName] = useState('');
     const [email] = useState(route.params?.email || '');
+    const [temporaryPassword] = useState(route.params?.temporaryPassword || '');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const dispatch = useAppDispatch();
 
     const backgroundImage = isDarkMode
         ? require('../../assets/DarkMode.jpg')
@@ -134,8 +137,10 @@ const SetUp = () => {
             return;
         }
 
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters long');
+        // Password validation
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(password)) {
+            setError('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character');
             return;
         }
 
@@ -143,38 +148,56 @@ const SetUp = () => {
             setError('');
             setLoading(true);
 
+            console.log('Attempting sign in with temporary password');
+            
             // First, sign in with the temporary password
-            const { nextStep, signInOutput } = await signIn({
-                username: email,
-                password: '1234' // temporary password from email
-            });
+            const signInResult = await auth.signIn(email, temporaryPassword);
+            console.log('Sign in response:', signInResult);
 
-            if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD') {
-                // Complete the new password challenge with v6 syntax
-                await confirmSignIn({
-                    challengeResponse: password,
-                    options: {
-                        userAttributes: {
-                            name: name
-                        }
-                    }
-                });
+            if (signInResult.challengeName === 'NEW_PASSWORD_REQUIRED') {
+                console.log('Completing new password challenge');
+                
+                // Complete the new password challenge
+                const result = await auth.completeNewPassword(email, signInResult.session, password);
+                console.log('Password change result:', result);
 
-                // Update user attributes if needed
-                await updatePassword({
-                    oldPassword: '1234',
-                    newPassword: password
-                });
+                if (result.isSignedIn && result.tokens) {
+                    // Update Redux state
+                    dispatch(setAuth({
+                        accessToken: result.tokens.accessToken,
+                        idToken: result.tokens.idToken,
+                        refreshToken: result.tokens.refreshToken,
+                        isAuthenticated: true
+                    }));
 
-                console.log('SetUp-handleSignUp() => Sign-up success');
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Home' }],
-                });
+                    dispatch(setUserAttributes({
+                        name: name,
+                        email: email,
+                        role: 'user' // Default role, will be updated when fetching user data
+                    }));
+
+                    // Navigate to home screen
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Home' }],
+                    });
+                } else {
+                    throw new Error('Failed to complete password change');
+                }
+            } else {
+                throw new Error('Unexpected authentication state');
             }
         } catch (err) {
-            console.error('SetUp-handleSignUp() => Sign-up failed:', err);
-            setError(err.message || 'Sign-up failed. Please try again.');
+            console.error('SetUp-handleSignUp() => Error:', err);
+            
+            if (err.message?.includes('Password does not conform to policy')) {
+                setError('Your password must include at least 8 characters, uppercase and lowercase letters, numbers, and special characters');
+            } else if (err.message?.includes('Invalid session')) {
+                setError('Your session has expired. Please start over from the invitation link.');
+                navigation.navigate('Welcome');
+            } else {
+                setError('Failed to set up your account. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
