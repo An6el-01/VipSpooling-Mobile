@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import Card from '../../components/Card';
 import { useAppSelector, useAppDispatch } from '../../hooks/hooks';
 import { auth } from '../../services/auth';
+import { setAuth, setUserGroups, setUserAttributes } from '../../store/authSlice';
 
 const styles = StyleSheet.create({
     background:{
@@ -137,26 +138,32 @@ const SignIn = () => {
             console.log('Sign in successful:', result);
 
             if (result.isSignedIn && result.tokens) {
-                // First dispatch the auth state
-                dispatch({
-                    type: 'auth/setAuth',
-                    payload: {
-                        accessToken: result.tokens.accessToken,
-                        idToken: result.tokens.idToken,
-                        refreshToken: result.tokens.refreshToken,
-                        isAuthenticated: true
-                    }
-                });
+                // Parse the ID token to get user information
+                const idToken = result.tokens.idToken;
+                const tokenParts = idToken.split('.');
+                const payload = JSON.parse(atob(tokenParts[1]));
 
-                // Then set some basic user attributes
-                dispatch({
-                    type: 'auth/setUserAttributes',
-                    payload: {
-                        email: email,
-                        name: email.split('@')[0], // Basic name from email
-                        role: 'user'
-                    }
-                });
+                // Extract user information from the token
+                const userGroups = payload['cognito:groups'] || [];
+                const userAttributes = {
+                    name: payload.name || email.split('@')[0],
+                    email: payload.email,
+                    role: userGroups[0] || 'User'
+                };
+
+                // First dispatch the auth state
+                dispatch(setAuth({
+                    accessToken: result.tokens.accessToken,
+                    idToken: result.tokens.idToken,
+                    refreshToken: result.tokens.refreshToken,
+                    isAuthenticated: true
+                }));
+
+                // Set user groups
+                dispatch(setUserGroups(userGroups));
+
+                // Set user attributes
+                dispatch(setUserAttributes(userAttributes));
 
                 console.log('Auth state updated, navigating to Home...');
                 navigation.navigate('Home');

@@ -325,7 +325,6 @@ app.get('/api/pricingplans', async (req, res) => {
     }
 });
 
-
 //** COGNITO */
 
 // Get all users from Cognito
@@ -447,7 +446,6 @@ app.post('/api/users/create', async (req, res) => {
         });
     }
 });
-
 
 //** INVOICE FORMS */
 
@@ -575,6 +573,8 @@ app.get('/api/dynamoDB/getAnInvoiceForm', async (req, res, next) => {
 // Get all items from InvoiceForm Table
 app.get('/api/dynamoDB/getAllInvoiceForms', async (req, res, next) => {
     try {
+        const { userName, userRole } = req.query;
+        
         const { Items } = await docClient.send(new ScanCommand({
             TableName: 'InvoiceForm-ghr672m57fd2re7tckfmfby2e4-dev',
         }));
@@ -588,10 +588,15 @@ app.get('/api/dynamoDB/getAllInvoiceForms', async (req, res, next) => {
             });
         }
 
+        let filteredItems = Items;
+        if (userRole === 'Operator') {
+            filteredItems = Items.filter(item => item.Spooler === userName);
+        }
+
         res.status(200).json({
             success: true,
-            count: Items.length,
-            data: Items
+            count: filteredItems.length,
+            data: filteredItems
         });
     } catch (error) {
         console.error("Error getting all Invoice Forms:", error);
@@ -696,6 +701,8 @@ app.get('/api/lambda/generateWorkTicketID-Jsa', async (req, res, next) => {
 //Get all items from JSAForm Table 
 app.get('/api/dynamoDB/getAllJSAForms', async (req, res, next) => {
     try {
+        const { userName, userRole } = req.query;
+
         const { Items } = await docClient.send(new ScanCommand({
             TableName: 'JsaForm-ghr672m57fd2re7tckfmfby2e4-dev',
         }));
@@ -709,10 +716,15 @@ app.get('/api/dynamoDB/getAllJSAForms', async (req, res, next) => {
             });
         }
 
+        let filteredItems = Items;
+        if (userRole === 'Operator') {
+            filteredItems = Items.filter(item => item.CreatedBy === userName);
+        }
+
         res.status(200).json({
             success: true,
-            count: Items.length,
-            data: Items
+            count: filteredItems.length,
+            data: filteredItems
         });
     } catch (error) {
         console.error("Error getting all JSA forms: ", error);
@@ -766,6 +778,8 @@ app.post('/api/dynamoDB/createJSAForm', validateRequest(JSAFormSchema), async (r
 //Get all items from CapillaryForm Table
 app.get('/api/dynamoDB/getAllCapillaryForms', async (req, res, next) => {
     try{
+        const { userName, userRole } = req.query;
+
         const { Items } = await docClient.send(new ScanCommand({
             TableName: 'CapillaryForm-ghr672m57fd2re7tckfmfby2e4-dev',
         }));
@@ -779,10 +793,15 @@ app.get('/api/dynamoDB/getAllCapillaryForms', async (req, res, next) => {
             });
         }
 
+        let filteredItems = Items;
+        if (userRole === 'Operator') {
+            filteredItems = Items.filter(item => item.TechnicianName === userName);
+        }
+
         res.status(200).json({
             success: true,
-            count: Items.length,
-            data: Items
+            count: filteredItems.length,
+            data: filteredItems
         });
     } catch (error) {
         console.error("Error getting all Capillary Forms:", error);

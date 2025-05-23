@@ -5,7 +5,9 @@ const initialState = {
     forms: [],
     lastFetched: null,
     error: null,
-    loading: false
+    loading: false,
+    userRole: null,
+    userName: null
 };
 
 const formsSlice = createSlice({
@@ -25,6 +27,10 @@ const formsSlice = createSlice({
         clearForms: (state) => {
             state.forms = [];
             state.lastFetched = null;
+        },
+        setUserInfo: (state, action) => {
+            state.userRole = action.payload.role;
+            state.userName = action.payload.name;
         }
     },
     extraReducers: (builder) => {
@@ -37,22 +43,83 @@ const formsSlice = createSlice({
     }
 });
 
-export const { setForms, setLoading, setError, clearForms } = formsSlice.actions;
+export const { setForms, setLoading, setError, clearForms, setUserInfo } = formsSlice.actions;
 
 // Memoized selector for forms
 const selectForms = state => state.forms.forms;
+const selectUserRole = state => state.forms.userRole;
+const selectUserName = state => state.forms.userName;
 
-// Memoized selector for sorted forms
+// Memoized selector for sorted and filtered forms
 export const selectSortedForms = createSelector(
-    [selectForms],
-    (forms) => {
+    [selectForms, selectUserRole, selectUserName],
+    (forms, userRole, userName) => {
+        console.log('Filtering forms with:', { userRole, userName });
+        
         if (!forms || !Array.isArray(forms)) return [];
-        return [...forms].sort((a, b) => {
-            const dateA = a.InvoiceDate || a.FormDate;
-            const dateB = b.InvoiceDate || b.FormDate;
+
+        let filteredForms = forms;
+        
+        // Apply role-based filtering
+        if (userRole === 'Operator') {
+            console.log('Applying Operator filtering');
+            filteredForms = forms.filter(form => {
+                const shouldInclude = (() => {
+                    switch (form._typename) {
+                        case 'Invoice Form':
+                            console.log('Checking Invoice Form:', {
+                                formId: form.WorkTicketID,
+                                spooler: form.Spooler,
+                                userName,
+                                matches: form.Spooler === userName
+                            });
+                            return form.Spooler === userName;
+                        case 'JSA Form':
+                            console.log('Checking JSA Form:', {
+                                formId: form.WorkTicketID,
+                                createdBy: form.CreatedBy,
+                                userName,
+                                matches: form.CreatedBy === userName
+                            });
+                            return form.CreatedBy === userName;
+                        case 'Capillary Form':
+                            console.log('Checking Capillary Form:', {
+                                formId: form.WorkTicketID,
+                                technician: form.TechnicianName,
+                                userName,
+                                matches: form.TechnicianName === userName
+                            });
+                            return form.TechnicianName === userName;
+                        default:
+                            console.log('Unknown form type:', form._typename);
+                            return false;
+                    }
+                })();
+
+                if (!shouldInclude) {
+                    console.log('Filtering out form:', {
+                        type: form._typename,
+                        id: form.WorkTicketID
+                    });
+                }
+
+                return shouldInclude;
+            });
+        }
+
+        // console.log('Forms after filtering:', filteredForms);
+
+        // Sort the filtered forms by date
+        const sortedForms = [...filteredForms].sort((a, b) => {
+            const dateA = a.InvoiceDate || a.FormDate || a.Date;
+            const dateB = b.InvoiceDate || b.FormDate || b.Date;
             if (!dateA || !dateB) return 0;
             return new Date(dateB) - new Date(dateA);
         });
+
+        console.log('Forms after sorting:', sortedForms);
+
+        return sortedForms;
     }
 );
 

@@ -166,6 +166,8 @@ const MyTeam = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const authState = useAppSelector((state) => state.auth);
+    const userGroups = useAppSelector((state) => state.auth.userGroups) || [];
+    const isOperator = userGroups.includes('Operator');
 
     const backgroundImage = isDarkMode
         ? require('../../assets/DarkMode.jpg')
@@ -312,35 +314,39 @@ const MyTeam = () => {
                                                 Roles: {user.groups?.join(', ') || 'No roles'}
                                             </Text>
                                         </View>
-                                        <TouchableOpacity onPress={() => {
-                                            navigation.navigate('EditTeamMember', { 
-                                                user: {
-                                                    name: user.name,
-                                                    email: user.email,
-                                                    groups: user.groups
-                                                }
-                                            })
-                                        }}>
-                                            <Image
-                                                source={require('../../assets/view.png')}
-                                                style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
-                                            />
-                                        </TouchableOpacity>
+                                        {!isOperator && (
+                                            <TouchableOpacity onPress={() => {
+                                                navigation.navigate('EditTeamMember', { 
+                                                    user: {
+                                                        name: user.name,
+                                                        email: user.email,
+                                                        groups: user.groups
+                                                    }
+                                                })
+                                            }}>
+                                                <Image
+                                                    source={require('../../assets/view.png')}
+                                                    style={[styles.activityIcon, { tintColor: isDarkMode ? '#fff' : '#000'}]}
+                                                />
+                                            </TouchableOpacity>
+                                        )}
                                     </View>
                                 ))
                             )}
                             </ScrollView>
                         </Card>
-                        {/*FLOATING ADD BUTTON*/}
-                        <TouchableOpacity
-                            style={styles.fab}
-                            onPress={() => navigation.navigate('NewTeamMember')}
-                        >
-                            <Image
-                                source={require('../../assets/plus.png')}
-                                style={styles.fabIcon}
-                            />
-                        </TouchableOpacity>
+                        {/*FLOATING ADD BUTTON - Only show for non-operators*/}
+                        {!isOperator && (
+                            <TouchableOpacity
+                                style={styles.fab}
+                                onPress={() => navigation.navigate('NewTeamMember')}
+                            >
+                                <Image
+                                    source={require('../../assets/plus.png')}
+                                    style={styles.fabIcon}
+                                />
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
             </TouchableWithoutFeedback>
