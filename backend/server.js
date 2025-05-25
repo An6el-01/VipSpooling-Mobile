@@ -6,7 +6,10 @@ const {
     AdminListGroupsForUserCommand,
     AdminCreateUserCommand,
     AdminAddUserToGroupCommand,
-    AdminSetUserPasswordCommand
+    AdminSetUserPasswordCommand,
+    AdminUpdateUserAttributesCommand,
+    AdminDeleteUserCommand,
+    AdminRemoveUserFromGroupCommand
 } = require('@aws-sdk/client-cognito-identity-provider');
 const { S3Client, ListObjectsV2Command, ListBucketsCommand } = require('@aws-sdk/client-s3');
 const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
@@ -443,6 +446,132 @@ app.post('/api/users/create', async (req, res) => {
         console.error('Error creating user:', error);
         res.status(500).json({ 
             error: error.message || 'Failed to create user' 
+        });
+    }
+});
+
+// Update a user's information (Name, Role, Email)
+app.put('/api/users/update', async (req, res) => {
+    try {
+        console.log('Update user request received:', req.body);
+        const { currentEmail, newEmail, newName, newRole } = req.body;
+
+        if (!currentEmail) {
+            return res.status(400).json({
+                error: 'Current email is required'
+            });
+        }
+
+        // Update user attributes if provided
+        if (newName || newEmail) {
+            const updateAttributesParams = {
+                UserPoolId: process.env.USER_POOL_ID || 'us-east-1_Sk6JKaM2w',
+                Username: currentEmail,
+                UserAttributes: []
+            };
+
+            if (newName) {
+                updateAttributesParams.UserAttributes.push({
+                    Name: 'name',
+                    Value: newName
+                });
+            }
+
+            if (newEmail) {
+                updateAttributesParams.UserAttributes.push({
+                    Name: 'email',
+                    Value: newEmail
+                });
+                // Also update email_verified attribute
+                updateAttributesParams.UserAttributes.push({
+                    Name: 'email_verified',
+                    Value: 'true'
+                });
+            }
+
+            console.log('Updating user attributes:', updateAttributesParams);
+            const updateAttributesCommand = new AdminUpdateUserAttributesCommand(updateAttributesParams);
+            await cognitoClient.send(updateAttributesCommand);
+        }
+
+        // Update user's role if provided
+        if (newRole) {
+            // First, get current groups
+            const listGroupsParams = {
+                UserPoolId: process.env.USER_POOL_ID || 'us-east-1_Sk6JKaM2w',
+                Username: currentEmail
+            };
+            const listGroupsCommand = new AdminListGroupsForUserCommand(listGroupsParams);
+            const currentGroups = await cognitoClient.send(listGroupsCommand);
+
+            // Remove from all current groups
+            for (const group of currentGroups.Groups) {
+                const removeFromGroupParams = {
+                    UserPoolId: process.env.USER_POOL_ID || 'us-east-1_Sk6JKaM2w',
+                    Username: currentEmail,
+                    GroupName: group.GroupName
+                };
+                const removeFromGroupCommand = new AdminRemoveUserFromGroupCommand(removeFromGroupParams);
+                await cognitoClient.send(removeFromGroupCommand);
+            }
+
+            // Add to new group
+            const addToGroupParams = {
+                UserPoolId: process.env.USER_POOL_ID || 'us-east-1_Sk6JKaM2w',
+                Username: currentEmail,
+                GroupName: newRole
+            };
+            const addToGroupCommand = new AdminAddUserToGroupCommand(addToGroupParams);
+            await cognitoClient.send(addToGroupCommand);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'User updated successfully',
+            data: {
+                email: newEmail || currentEmail,
+                name: newName,
+                role: newRole
+            }
+        });
+
+    } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({
+            error: error.message || 'Failed to update user'
+        });
+    }
+});
+
+// Delete a user from Cognito
+app.delete('/api/users/delete', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                error: 'Email is required'
+            });
+        }
+
+        const params = {
+            UserPoolId: process.env.USER_POOL_ID,
+            Username: email
+        };
+
+        const command = new AdminDeleteUserCommand(params);
+        await cognitoClient.send(command);
+
+        res.status(200).json({
+            success: true,
+            message: 'User deleted successfully',
+            data: { email }
+        });
+
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({
+            error: error.message || 'Failed to delete user'
         });
     }
 });

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switch, TextInput, TouchableWithoutFeedback, Keyboard, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switch, TextInput, TouchableWithoutFeedback, Keyboard, Modal, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '../../../hooks/hooks';
 import { toggleTheme } from '../../../store/themeSlice';
 import Card from '../../../components/Card';
+import { endpoints } from '../../../config/config';
 
 const styles = StyleSheet.create({
     background: {
@@ -93,6 +94,8 @@ const styles = StyleSheet.create({
     value: {
         fontSize: 14,
         fontWeight: '500',
+        textAlign: 'right',
+        marginRight: 10,
     },
     logoutButton: {
         flexDirection: 'row',
@@ -247,6 +250,52 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#fff'
     },
+    modalView: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+    },
+    pickerWindow: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 10,
+        width: '80%',
+    },
+    pickerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    pickerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    closeButton: {
+        padding: 10,
+    },
+    closeButtonText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    itemButton: {
+        padding: 10,
+    },
+    itemButtonText: {
+        fontSize: 16,
+    },
+    dropdownField: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        width: '70%',
+    },
+    dropdownArrow: {
+        fontSize: 20,
+        color: '#000',
+        paddingRight: 5,
+    },
 });
 
 const EditTeamMember = ({ route }) => {
@@ -262,10 +311,108 @@ const EditTeamMember = ({ route }) => {
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [modalVisible, setModalVisible] = useState(false);
+    const [showRolePicker, setShowRolePicker] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const roleOptions = ['Admin', 'Manager', 'Operator'];
 
     const backgroundImage = isDarkMode
         ? require('../../../assets/DarkMode.jpg')
         : require('../../../assets/LightMode.jpg');
+
+    const handleUpdateUser = async () => {
+        try {
+            setIsLoading(true);
+            const updateData = {
+                currentEmail: user.email,
+                newEmail: email !== user.email ? email : undefined,
+                newName: name !== user.name ? name : undefined,
+                newRole: role !== user.groups?.[0] ? role : undefined,
+            };
+
+            console.log('Sending update request with data:', updateData);
+            console.log('To endpoint:', endpoints.updateUser);
+
+            const response = await fetch(endpoints.updateUser, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(updateData),
+            });
+
+            // Log the raw response
+            const responseText = await response.text();
+            console.log('Raw server response:', responseText);
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse response:', parseError);
+                throw new Error(`Server returned invalid response: ${responseText}`);
+            }
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to update user');
+            }
+
+            Alert.alert(
+                'Success',
+                'User information updated successfully',
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => navigation.goBack(),
+                    },
+                ]
+            );
+        } catch (error) {
+            console.error('Update user error:', error);
+            Alert.alert('Error', error.message || 'Failed to update user');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeleteUser = async () => {
+        try {
+            setIsLoading(true);
+            const response = await fetch(endpoints.deleteUser, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: user.email,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to delete user');
+            }
+
+            setModalVisible(false);
+            Alert.alert(
+                'Success',
+                'User deleted successfully',
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => navigation.navigate('My Team'),
+                    },
+                ]
+            );
+        } catch (error) {
+            setModalVisible(false);
+            Alert.alert('Error', error.message || 'Failed to delete user');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <ImageBackground source={backgroundImage} style={styles.background}>
@@ -308,11 +455,15 @@ const EditTeamMember = ({ route }) => {
                             <Image source={require('../../../assets/admin.png')} style={[styles.cardIcon, { tintColor:  isDarkMode ? '#fff' : '#000'}]} />
                             <Text style={[styles.label, {color: isDarkMode ? '#fff' : '#000'}]}>Role:</Text>
                         </View>
-                        <TextInput
-                            style={[styles.input, { color: isDarkMode ? '#fff' : '#000' }]}
-                            value={role}
-                            onChangeText={setRole}
-                        />
+                        <TouchableOpacity 
+                            style={styles.dropdownField}
+                            onPress={() => setShowRolePicker(true)}
+                        >
+                            <Text style={[styles.value, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                {role || 'Select Role'}
+                            </Text>
+                            <Text style={styles.dropdownArrow}>▼</Text>
+                        </TouchableOpacity>
                     </View>
                     <View style={styles.row}>
                         <View style={styles.labelContainer}>
@@ -340,28 +491,43 @@ const EditTeamMember = ({ route }) => {
                 </Card>
                 {/* BUTTONS SECTION */}
                 <View style={styles.buttonsContainer}>
-
-                <TouchableOpacity style={styles.deleteUserButton} onPress={() => setModalVisible(true)}>
+                    <TouchableOpacity 
+                        style={[
+                            styles.deleteUserButton,
+                            isLoading && { opacity: 0.7 }
+                        ]} 
+                        onPress={() => setModalVisible(true)}
+                        disabled={isLoading}
+                    >
                         <View style={styles.buttonContent}>
                             <Image 
                                 source={require('../../../assets/delete.png')}
                                 style={[styles.buttonIcon, { tintColor: '#000' }]}
                             />
-                            <Text style={styles.deleteUserText}>Delete User</Text>
+                            <Text style={styles.deleteUserText}>
+                                {isLoading ? 'Processing...' : 'Delete User'}
+                            </Text>
                         </View>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.confirmEditButton}>
+                    <TouchableOpacity 
+                        style={[
+                            styles.confirmEditButton,
+                            isLoading && { opacity: 0.7 }
+                        ]}
+                        onPress={handleUpdateUser}
+                        disabled={isLoading}
+                    >
                         <View style={styles.buttonContent}>
                             <Image 
                                 source={require('../../../assets/save.png')}
                                 style={[styles.buttonIcon, { tintColor: '#000' }]}
                             />
-                            <Text style={styles.confirmEditText}>Confirm Edit</Text>
+                            <Text style={styles.confirmEditText}>
+                                {isLoading ? 'Saving...' : 'Confirm Edit'}
+                            </Text>
                         </View>
                     </TouchableOpacity>
-                    
-                    
                 </View>
                 </View>
                 {/**CONFIRMATION MODAL*/}
@@ -375,15 +541,70 @@ const EditTeamMember = ({ route }) => {
                         <View style={styles.modalContent}>
                             <Text style={styles.modalTitle}>Are you sure you want to delete this user?</Text>
                             <View style={styles.modalButtons}>
-                                <TouchableOpacity style={styles.modalButtonCancel} onPress={() => setModalVisible(false)}>
+                                <TouchableOpacity 
+                                    style={styles.modalButtonCancel} 
+                                    onPress={() => setModalVisible(false)}
+                                    disabled={isLoading}
+                                >
                                     <Text style={styles.modalButtonText}>No</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.modalButtonConfirm} onPress={()=>{setModalVisible(false); navigation.navigate('DeleteConfirmed');}}>
-                                    <Text style={styles.modalButtonText}>Yes</Text>
+                                <TouchableOpacity 
+                                    style={styles.modalButtonConfirm} 
+                                    onPress={handleDeleteUser}
+                                    disabled={isLoading}
+                                >
+                                    <Text style={styles.modalButtonText}>
+                                        {isLoading ? 'Deleting...' : 'Yes'}
+                                    </Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
                     </View>
+                </Modal>
+
+                {/* ROLE PICKER MODAL */}
+                <Modal
+                    visible={showRolePicker}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setShowRolePicker(false)}
+                >
+                    <TouchableWithoutFeedback onPress={() => setShowRolePicker(false)}>
+                        <View style={styles.modalView}>
+                            <TouchableWithoutFeedback>
+                                <View style={styles.pickerWindow}>
+                                    <View style={styles.pickerHeader}>
+                                        <Text style={styles.pickerTitle}>Select Role</Text>
+                                        <TouchableOpacity 
+                                            style={styles.closeButton}
+                                            onPress={() => setShowRolePicker(false)}
+                                        >
+                                            <Text style={styles.closeButtonText}>Done</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                    <ScrollView>
+                                        {roleOptions.map((option) => (
+                                            <TouchableOpacity
+                                                key={option}
+                                                style={styles.itemButton}
+                                                onPress={() => {
+                                                    setRole(option);
+                                                    setShowRolePicker(false);
+                                                }}
+                                            >
+                                                <Text style={[
+                                                    styles.itemButtonText,
+                                                    role === option && { fontWeight: 'bold' }
+                                                ]}>
+                                                    {option}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            </TouchableWithoutFeedback>
+                        </View>
+                    </TouchableWithoutFeedback>
                 </Modal>
             </View>
             </TouchableWithoutFeedback>
