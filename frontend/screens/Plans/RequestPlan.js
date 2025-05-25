@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../../hooks/hooks';
 import { toggleTheme } from '../../store/themeSlice';
 import Card from '../../components/Card';
+import { endpoints } from '../../config/config';
 
 const styles = StyleSheet.create({
     background: {
@@ -113,7 +114,121 @@ const styles = StyleSheet.create({
 const RequestPlan = () => {
     const navigation = useNavigation();
     const isDarkMode = useAppSelector((state) =>  state.theme.isDarkMode);
-    const dispatch = useAppDispatch(); 
+    const dispatch = useAppDispatch();
+    const authState = useAppSelector((state) => state.auth);
+    const userAttributes = useAppSelector((state) => state.auth.userAttributes) || {};
+
+    // Add state for form inputs
+    const [formData, setFormData] = useState({
+        name: 'Plans', // Default template type
+        email: userAttributes.email || '', // Initialize with email from userAttributes
+        description: ''
+    });
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Effect to fetch user data if not available
+    useEffect(() => {
+        const fetchUserEmail = async () => {
+            try {
+                if (!authState.accessToken) {
+                    console.log('No auth token available');
+                    return;
+                }
+
+                const response = await fetch(endpoints.users, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authState.accessToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+
+                const data = await response.json();
+                const currentUser = data.users.find(u => u.email === userAttributes.email);
+                
+                if (currentUser) {
+                    setFormData(prev => ({
+                        ...prev,
+                        email: currentUser.email
+                    }));
+                }
+            } catch (error) {
+                console.error('Error fetching user email:', error);
+            }
+        };
+
+        if (!formData.email && authState.accessToken) {
+            fetchUserEmail();
+        }
+    }, [authState.accessToken, userAttributes.email]);
+
+    const handleSubmit = async () => {
+        // Basic validation
+        if (!formData.description) {
+            Alert.alert('Error', 'Please enter a description for your request');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            console.log('Sending request with data:', {
+                to_name: formData.name,
+                to_email: formData.email,
+                formType: 'Plans',
+                formSpecs: formData.description
+            });
+            
+            const response = await fetch(endpoints.sendRequestTemplate, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    to_name: formData.name,
+                    to_email: formData.email,
+                    from_name: 'Custom GoFormz',
+                    formType: 'Plans',
+                    formSpecs: formData.description,
+                    reply_to: 'support@customgoformz.com'
+                })
+            });
+
+            // First try to get the response as text
+            const responseText = await response.text();
+            
+            let data;
+            try {
+                // Try to parse the response text as JSON
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Response is not JSON:', responseText);
+                throw new Error('Invalid server response format');
+            }
+
+            if (response.ok && data.success) {
+                // Clear the description field after successful submission
+                setFormData(prev => ({ ...prev, description: '' }));
+                navigation.navigate('RequestSentConfirmed');
+            } else {
+                throw new Error(data.message || 'Failed to send request');
+            }
+        } catch (error) {
+            console.error('Error sending request:', error);
+            Alert.alert(
+                'Error',
+                error.message || 'Failed to send request. Please try again later.'
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const backgroundImage = isDarkMode
     ? require('../../assets/DarkMode.jpg')
@@ -160,26 +275,29 @@ const RequestPlan = () => {
                         {/**CARD SECTION*/}
                         <Card isDarkMode={isDarkMode} style={{marginTop: '80'}}>
                             <View style={styles.cardContainerContent}>
-                                {/**NAME INPUT FIELD*/}
-                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>Name</Text> 
+                                {/**TEMPLATE TYPE FIELD*/}
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>Template Type:</Text> 
                                 <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <TextInput
-                                        placeholder='Full Name'
+                                        placeholder='Template Type'
                                         placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
-                                        keyboardType='ascii-capable'
-                                        autoCapitalize='none'
+                                        editable={false}
+                                        value="Plans"
                                     />
                                 </View>
                                 {/**EMAIL INPUT FIELD*/}
-                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>Email</Text> 
+                                <Text style={[styles.fieldText, { color: isDarkMode ? '#fff' : '#000'}]}>Email:</Text> 
                                 <View style={[styles.inputField, { borderColor: isDarkMode ? '#fff' : '#000'}]}>
                                     <TextInput
                                         placeholder='Email Address'
                                         placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
                                         style={styles.inputText}
-                                        keyboardType='ascii-capable'
+                                        keyboardType='email-address'
                                         autoCapitalize='none'
+                                        value={formData.email}
+                                        onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
+                                        editable={false} // Make email field non-editable
                                     />
                                 </View>
                                 {/**DESCRIPTION INPUT FIELD*/}
@@ -191,12 +309,23 @@ const RequestPlan = () => {
                                         style={styles.inputText}
                                         keyboardType='ascii-capable'
                                         autoCapitalize='none'
-                                        multiline={true} // Enable multiline input
-                                        scrollEnabled={true} // Enable scrolling
+                                        multiline={true}
+                                        scrollEnabled={true}
+                                        value={formData.description}
+                                        onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
                                     />
                                 </View>
-                                <TouchableOpacity style={styles.sendButton} onPress={() => {navigation.navigate('RequestSentConfirmed')}}>
-                                    <Text style={styles.sendButtonText}>Submit request</Text>
+                                <TouchableOpacity 
+                                    style={[
+                                        styles.sendButton,
+                                        isLoading && { opacity: 0.7 }
+                                    ]} 
+                                    onPress={handleSubmit}
+                                    disabled={isLoading}
+                                >
+                                    <Text style={styles.sendButtonText}>
+                                        {isLoading ? 'Sending...' : 'Submit request'}
+                                    </Text>
                                     <Image source={require('../../assets/right-arrow.png')} style={styles.buttonArrow} />
                                 </TouchableOpacity>
                             </View>

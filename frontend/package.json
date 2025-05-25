@@ -25,6 +25,7 @@
     "expo-image-picker": "^16.1.4",
     "expo-status-bar": "~2.2.3",
     "jwt-decode": "^4.0.0",
+    "node-fetch": "^3.3.2",
     "react": "19.0.0",
     "react-native": "0.79.2",
     "react-native-dotenv": "^3.4.11",

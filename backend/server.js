@@ -994,6 +994,85 @@ app.post('/api/dynamoDB/createCapillaryForm', validateRequest(CapillaryFormSchem
 });
 
 
+//**EMAIL JS */
+
+// Send Request Template 
+app.post('/api/email/sendRequestTemplate', async(req, res) => {
+    try {
+        const { 
+            to_name,
+            to_email,
+            from_name,
+            formType,
+            formSpecs,
+            reply_to
+        } = req.body;
+
+        // Validate required fields
+        if (!to_email || !formSpecs || !formType) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields: email, form specifications, and form type are required'
+            });
+        }
+
+        // EmailJS configuration
+        const data = {
+            service_id: 'service_fh19mmh',
+            template_id: 'template_t4svwgf',
+            user_id: 'OThiis90G_SdAJ8IL',
+            template_params: {
+                to_name: to_name || 'User',
+                to_email,
+                from_name: from_name || 'Custom GoFormz',
+                formType: formType.trim(),
+                formSpecs: formSpecs.trim(),
+                reply_to: reply_to || 'support@customgoformz.com'
+            },
+            accessToken: '32yu7e_eH7uEy4xshsRQZ'
+        };
+
+        console.log('Sending email with data:', {
+            ...data,
+            accessToken: '[HIDDEN]',
+            template_params: {
+                ...data.template_params,
+                formSpecs: formSpecs.length > 100 ? formSpecs.substring(0, 100) + '...' : formSpecs, // Log truncated specs
+                formType
+            }
+        });
+
+        // Make request to EmailJS API
+        const emailResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!emailResponse.ok) {
+            const errorText = await emailResponse.text();
+            console.error('EmailJS API error:', errorText);
+            throw new Error(`EmailJS API responded with status: ${emailResponse.status}`);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Email sent successfully'
+        });
+
+    } catch (error) {
+        console.error('Error in sendRequestTemplate:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to send email',
+            error: error.message
+        });
+    }
+});
+
+
 
 // Error handling middleware
 app.use(errorHandler);

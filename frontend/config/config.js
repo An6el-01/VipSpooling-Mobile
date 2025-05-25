@@ -27,5 +27,7 @@ export const endpoints = {
     //** LAMBDA FUNCTIONS */
     generateWorkTicketID: `${API_URL}/api/lambda/generateWorkTicketID-Invoices`,
     generateWorkTicketIDJsa: `${API_URL}/api/lambda/generateWorkTicketID-Jsa`,
-    // Add other endpoints here as needed
+   
+    //** EMAIL JS */
+    sendRequestTemplate: `${API_URL}/api/email/sendRequestTemplate`,
 }; 
