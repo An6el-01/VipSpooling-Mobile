@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
         marginRight: 25,
     },
     activityText: {
-        fontSize: 15,
+        fontSize: 12,
         width: '220',
         fontWeight: '700',
         color: '#838383',
@@ -377,20 +377,27 @@ const MyForms = () => {
                                     <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
                                         <View style={styles.activityDetails}>
                                             <Text style={[styles.activityText, {color: isDarkMode ? '#fff' : '#000'}]}>
-                                                {form._typename || (form.formType === 'invoice' ? 'Invoice Form' : form.formType === 'jsa' ? 'JSA Form' : 'Capillary Form')}
+                                                {(() => {
+                                                    if (form.formType === 'invoice') {
+                                                        return `${form.CableCompany || ''}, ${form.OilCompany || ''}, ${form.WorkTicketID || ''}`.trim() || form._typename;
+                                                    } else if (form.formType === 'jsa') {
+                                                        return `${form.CustomerName || ''}, ${form.Location || ''}, ${form.WorkTicketID || ''}`.trim() || form._typename;
+                                                    } else if (form.formType === 'capillary') {
+                                                        return `${form.Customer || ''}, ${form.WellName || ''}, ${form.WorkTicketID || ''}`.trim() || form._typename;
+                                                    }
+                                                    return form._typename;
+                                                })()}
                                             </Text>
                                             <Text style={[styles.activityText, {fontSize: 12 }]}>
                                                 {(() => {
-                                                    switch (form.formType) {
-                                                        case 'invoice':
-                                                            return `${form.InvoiceDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`;
-                                                        case 'jsa':
-                                                            return `${form.FormDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`;
-                                                        case 'capillary':
-                                                            return `${form.Date || 'No Date'} - ${form.WorkTicketID || 'No ID'}`;
-                                                        default:
-                                                            return 'Unknown Form Type';
+                                                    if (form.formType === 'invoice') {
+                                                        return `${form.Spooler || ''}, ${form.InvoiceDate || ''}`.trim() || 'No details available';
+                                                    } else if (form.formType === 'jsa') {
+                                                        return `${form.CreatedBy || ''}, ${form.EffectiveDate || ''}`.trim() || 'No details available';
+                                                    } else if (form.formType === 'capillary') {
+                                                        return `${form.TechnicianName || ''}, ${form.Date || ''}`.trim() || 'No details available';
                                                     }
+                                                    return 'No details available';
                                                 })()}
                                             </Text>
                                         </View>
