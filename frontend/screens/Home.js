@@ -97,11 +97,11 @@ const styles = StyleSheet.create({
     marginRight: 25,
   },
   activityText: {
-    fontSize: 15,
+    fontSize: 12,
     width: '220',//THIS CONTROLS WIDTH OF INVOICES (NOT OPTIMIZED CORRECTLY FOR ALL SCREENS.)
     fontWeight: '700',
     color: '#838383',
-    marginBottom:5,
+    marginBottom:10,
   },
   activityIcon: {
     width: 30,
@@ -391,20 +391,36 @@ const Dashboard = () => {
                   <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
                     <View style={styles.activityDetails}>
                       <Text style={[styles.activityText, {color: isDarkMode ? '#fff' : '#000'}]}>
-                        {form._typename || (form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form')}
+                        {(() => {
+                            if (form.formType === 'invoice') {
+                                return `${form.CableCompany || ''}, ${form.OilCompany || ''}, ${form.WorkTicketID || ''}`.trim() || form._typename;
+                            } else if (form.formType === 'jsa') {
+                                return `${form.CustomerName || ''}, ${form.Location || ''}, ${form.WorkTicketID || ''}`.trim() || form._typename;
+                            } else if (form.formType === 'capillary') {
+                                return `${form.Customer || ''}, ${form.WellName || ''}, ${form.WorkTicketID || ''}`.trim() || form._typename;
+                            }
+                            return form._typename;
+                        })()}
                       </Text>
                       <Text style={[styles.activityText, {fontSize: 12 }]}>
-                        {form.formType === 'invoice' 
-                          ? `${form.InvoiceDate || 'No Date'} - ${form.WorkTicketID || 'No ID'}`
-                          : `${form.FormDate || form.Date || 'No Date'} - ${form.CustomerName || form.Customer || 'No Customer'}`
-                        }
+                      {(() => {
+                          if (form.formType === 'invoice') {
+                              return `${form.Spooler || ''}, ${form.InvoiceDate || ''}`.trim() || 'No details available';
+                          } else if (form.formType === 'jsa') {
+                              return `${form.CreatedBy || ''}, ${form.EffectiveDate || ''}`.trim() || 'No details available';
+                          } else if (form.formType === 'capillary') {
+                              return `${form.TechnicianName || ''}, ${form.Date || ''}`.trim() || 'No details available';
+                          }
+                          return 'No details available';
+                      })()}
                       </Text>
                     </View>
                     <TouchableOpacity onPress={() => {
                       navigation.navigate('ViewForm', { 
                         formData: {
                           ...form,
-                          _typename: form._typename || (form.formType === 'invoice' ? 'Invoice Form' : 'JSA Form')
+                          _typename: form._typename || (form.formType === 'invoice' ? 'Invoice Form' : 
+                            form.formType === 'capillary' ? 'Capillary Form' : 'JSA Form')
                         }
                       });
                     }}>

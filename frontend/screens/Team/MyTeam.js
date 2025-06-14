@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, TextInput, TouchableWithoutFeedback, Keyboard, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, TextInput, TouchableWithoutFeedback, Keyboard, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../../hooks/hooks';
 import { toggleTheme } from '../../store/themeSlice';
@@ -8,12 +8,12 @@ import CustomBottomTab from '../../components/CustomBottomTab';
 import { endpoints } from '../../config/config';
 
 const styles = StyleSheet.create({
-    background: {
+   background: {
         flex: 1,
         resizeMode: 'cover',
     },
     container: {
-        flex: 1,
+        flex: 1, 
         padding: 20,
     },
     header: {
@@ -29,14 +29,13 @@ const styles = StyleSheet.create({
         marginBottom: 90,
     },
     headerIcon: {
-        width: 24,
+        width:24,
         height: 24,
         marginLeft: 15,
     },
     title: {
-        fontSize: 30,
+        fontSize:30,
         fontWeight: '700',
-        color: '#000',
         marginBottom: 20,
         top: 40,
     },
@@ -48,9 +47,9 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderWidth: 1.3,
         borderColor: '#ccc',
-        marginBottom: 20,
+        marginBottom: 2,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1,},
+        shadowOffset: { width: 0, height: 1},
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
@@ -66,16 +65,10 @@ const styles = StyleSheet.create({
         height: 20,
         tintColor: '#000',
         marginLeft: 5,
-        marginRight: 20,
+        marginRight: 20
     },
     activitySection: {
-        marginTop: 20
-    },
-    cardContainer: {
-        height: 480,
-    },
-    cardContent: {
-        flex: 1,
+        marginTop: 15,
     },
     activityCard: {
         flexDirection: 'row',
@@ -83,17 +76,17 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderRadius:  10,
+        borderRadius: 10,
         padding: 10,
         marginBottom: 10,
         borderColor: '#ccc'
     },
-    activityDetails: {
+    activityDetails:{
         flexDirection: 'column',
         marginRight: 25,
     },
     activityText: {
-        fontSize: 15,
+        fontSize: 12,
         width: '220',
         fontWeight: '700',
         color: '#838383',
@@ -108,14 +101,14 @@ const styles = StyleSheet.create({
         position: 'absolute',
         backgroundColor: '#2196F3',
         bottom: -20,
-        right: -16,
-        width: 60,
-        height: 60,
+        right: -17,
+        width: 50,
+        height: 50,
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4},
+        shadowOffset: {Width: 0, height: 4},
         shadowOpacity: 0.3,
         shadowRadius: 4,
         elevation: 6,
@@ -125,15 +118,14 @@ const styles = StyleSheet.create({
         height: 30,
         tintColor: '#fff',
     },
+    cardContainer: {
+        height: 450,
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
-    },
-    loadingText: {
-        marginTop: 10,
-        fontSize: 16,
     },
     errorContainer: {
         flex: 1,
@@ -155,6 +147,58 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
     },
+    cardContent: {
+        flex: 1,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#838383',
+    },
+    paginationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 5,
+        marginBottom: 15,
+        backgroundColor: 'transparent',
+    },
+    paginationButton: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginHorizontal: 3,
+        borderRadius: 10,
+        backgroundColor: '#fff',
+        borderWidth: 1.3,
+        borderColor: '#ccc',
+        minWidth: 45,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1},
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    paginationButtonActive: {
+        backgroundColor: '#2196F3',
+        borderColor: '#2196F3',
+        shadowColor: '#2196F3',
+        shadowOpacity: 0.2,
+    },
+    paginationButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#000',
+    },
+    paginationButtonTextActive: {
+        color: '#fff',
+    },
+    paginationInfo: {
+        fontSize: 14,
+        marginHorizontal: 10,
+        color: '#666',
+    },
 });
 
 const MyTeam = () => {
@@ -168,6 +212,11 @@ const MyTeam = () => {
     const authState = useAppSelector((state) => state.auth);
     const userGroups = useAppSelector((state) => state.auth.userGroups) || [];
     const isOperator = userGroups.includes('Operator');
+    const [currentPage, setCurrentPage] = useState(1);
+    const usersPerPage = 6;
+    const [lastFetchTime, setLastFetchTime] = useState(null);
+    const MIN_FETCH_INTERVAL = 10000; // 10 seconds
+    const CACHE_DURATION = 60000; // 1 minute
 
     const backgroundImage = isDarkMode
         ? require('../../assets/DarkMode.jpg')
@@ -189,23 +238,34 @@ const MyTeam = () => {
         }, [authState.accessToken])
     );
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (forceRefresh = false) => {
         try {
             if (!authState.accessToken) {
                 console.log('No auth token available, skipping users fetch');
                 return;
             }
 
+            // Check if we should skip the fetch based on cache and minimum interval
+            const now = Date.now();
+            if (!forceRefresh && lastFetchTime && 
+                (now - lastFetchTime < MIN_FETCH_INTERVAL || 
+                 (now - lastFetchTime < CACHE_DURATION && users.length > 0))) {
+                console.log('Using cached data, skipping fetch');
+                return;
+            }
+
             setLoading(true);
             setError(null);
-            
+
             console.log('Fetching users with token:', authState.accessToken.substring(0, 10) + '...');
             
             // Make an API call to your backend to get users
             const response = await fetch(endpoints.users, {
                 headers: {
                     'Authorization': `Bearer ${authState.accessToken}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
                 }
             });
 
@@ -216,6 +276,7 @@ const MyTeam = () => {
             const data = await response.json();
             console.log('Users fetched successfully:', data.users.length);
             setUsers(data.users);
+            setLastFetchTime(now);
         } catch (err) {
             console.error('Error fetching users:', err);
             setError('Failed to load users. Please try again later.');
@@ -227,10 +288,121 @@ const MyTeam = () => {
         }
     };
 
-    const filteredUsers = users.filter(user => 
-        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Memoize filtered users to avoid unnecessary recalculations
+    const filteredUsers = useMemo(() => {
+        return users.filter(user => 
+            user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [users, searchQuery]);
+
+    // Calculate pagination values
+    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / usersPerPage));
+    const startIndex = (currentPage - 1) * usersPerPage;
+    const endIndex = startIndex + usersPerPage;
+    const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+    // Reset to first page when search query changes
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
+    // Add pull-to-refresh functionality
+    const handleRefresh = () => {
+        fetchUsers(true);
+    };
+
+    const renderPaginationControls = () => {
+        const pageNumbers = [];
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(i);
+        }
+
+        return (
+            <View style={[
+                styles.paginationContainer,
+                { backgroundColor: isDarkMode ? 'transparent' : 'transparent' }
+            ]}>
+                <TouchableOpacity
+                    style={[
+                        styles.paginationButton,
+                        { backgroundColor: isDarkMode ? '#000' : '#fff', borderColor: isDarkMode ? '#fff' : '#ccc' },
+                        currentPage === 1 && { opacity: 0.5 }
+                    ]}
+                    onPress={() => handlePageChange(1)}
+                    disabled={currentPage === 1}
+                >
+                    <Text style={[styles.paginationButtonText, { color: isDarkMode ? '#fff' : '#000' }]}>First</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[
+                        styles.paginationButton,
+                        { backgroundColor: isDarkMode ? '#000' : '#fff', borderColor: isDarkMode ? '#fff' : '#ccc' },
+                        currentPage === 1 && { opacity: 0.5 }
+                    ]}
+                    onPress={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                >
+                    <Text style={[styles.paginationButtonText, { color: isDarkMode ? '#fff' : '#000' }]}>‹</Text>
+                </TouchableOpacity>
+
+                {pageNumbers.map(number => (
+                    <TouchableOpacity
+                        key={number}
+                        style={[
+                            styles.paginationButton,
+                            { backgroundColor: isDarkMode ? '#000' : '#fff', borderColor: isDarkMode ? '#fff' : '#ccc' },
+                            currentPage === number && styles.paginationButtonActive
+                        ]}
+                        onPress={() => handlePageChange(number)}
+                    >
+                        <Text style={[
+                            styles.paginationButtonText,
+                            { color: isDarkMode ? '#fff' : '#000' },
+                            currentPage === number && styles.paginationButtonTextActive
+                        ]}>
+                            {number}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+
+                <TouchableOpacity
+                    style={[
+                        styles.paginationButton,
+                        { backgroundColor: isDarkMode ? '#000' : '#fff', borderColor: isDarkMode ? '#fff' : '#ccc' },
+                        currentPage === totalPages && { opacity: 0.5 }
+                    ]}
+                    onPress={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                >
+                    <Text style={[styles.paginationButtonText, { color: isDarkMode ? '#fff' : '#000' }]}>›</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[
+                        styles.paginationButton,
+                        { backgroundColor: isDarkMode ? '#000' : '#fff', borderColor: isDarkMode ? '#fff' : '#ccc' },
+                        currentPage === totalPages && { opacity: 0.5 }
+                    ]}
+                    onPress={() => handlePageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                >
+                    <Text style={[styles.paginationButtonText, { color: isDarkMode ? '#fff' : '#000' }]}>Last</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    };
 
     return(
         <ImageBackground source={backgroundImage} style={styles.background}>
@@ -282,19 +454,23 @@ const MyTeam = () => {
                     </View>
                     {/*MY TEAM SECTION*/}
                     <View style={styles.activitySection}>
+                        {/* Pagination Controls */}
+                        {renderPaginationControls()}
+                        
                         <Card isDarkMode={isDarkMode} style={[{padding: 8}, styles.cardContainer]}>
                             <ScrollView 
                                 style={styles.cardContent}
                                 showsVerticalScrollIndicator={true}
+                                refreshControl={
+                                    <RefreshControl
+                                        refreshing={loading}
+                                        onRefresh={handleRefresh}
+                                        colors={[isDarkMode ? '#fff' : '#000']}
+                                        tintColor={isDarkMode ? '#fff' : '#000'}
+                                    />
+                                }
                             >
-                            {loading ? (
-                                <View style={styles.loadingContainer}>
-                                    <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
-                                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                        Loading users...
-                                    </Text>
-                                </View>
-                            ) : error ? (
+                            {error ? (
                                 <View style={styles.errorContainer}>
                                     <Text style={[styles.errorText, { color: isDarkMode ? '#fff' : '#000' }]}>
                                         {error}
@@ -307,7 +483,7 @@ const MyTeam = () => {
                                     </Text>
                                 </View>
                             ) : (
-                                filteredUsers.map((user, index) => (
+                                currentUsers.map((user, index) => (
                                     <View key={index} style={[styles.activityCard, { backgroundColor: isDarkMode ? '#000' : '#fff', borderBottomColor: isDarkMode ? '#fff' : '#000'}]}>
                                         <View style={styles.activityDetails}>
                                             <Text style={[styles.activityText, { color: isDarkMode ? '#fff' : '#000'}]}>

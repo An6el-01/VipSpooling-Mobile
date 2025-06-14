@@ -107,14 +107,35 @@ export const selectSortedForms = createSelector(
             });
         }
 
-        // console.log('Forms after filtering:', filteredForms);
-
-        // Sort the filtered forms by date
+        // Sort the filtered forms by date in descending order
         const sortedForms = [...filteredForms].sort((a, b) => {
-            const dateA = a.InvoiceDate || a.FormDate || a.Date;
-            const dateB = b.InvoiceDate || b.FormDate || b.Date;
-            if (!dateA || !dateB) return 0;
-            return new Date(dateB) - new Date(dateA);
+            // Get the appropriate date field based on form type
+            const getDate = (form) => {
+                switch (form._typename) {
+                    case 'Invoice Form':
+                        return form.InvoiceDate;
+                    case 'JSA Form':
+                        return form.EffectiveDate;
+                    case 'Capillary Form':
+                        return form.Date;
+                    default:
+                        return null;
+                }
+            };
+
+            const dateA = getDate(a);
+            const dateB = getDate(b);
+
+            // If either date is missing, put it at the end
+            if (!dateA) return 1;
+            if (!dateB) return -1;
+
+            // Convert dates to timestamps for comparison
+            const timestampA = new Date(dateA).getTime();
+            const timestampB = new Date(dateB).getTime();
+
+            // Sort in descending order (newest first)
+            return timestampB - timestampA;
         });
 
         console.log('Forms after sorting:', sortedForms);

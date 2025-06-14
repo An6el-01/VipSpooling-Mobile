@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../../hooks/hooks';
 import { toggleTheme } from '../../store/themeSlice';
@@ -67,20 +67,49 @@ const styles = StyleSheet.create({
         paddingHorizontal: 35,
         alignItems: 'center',  
         justifyContent: 'center',
-        width: '100%',  
-        alignSelf: 'center',  
-        marginTop: 20,
+        flex: 1,
+        marginHorizontal: 5,
         shadowColor: '#000',  
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 3, 
     },
+    downloadButton: {
+        backgroundColor: '#4CAF50',
+        borderRadius: 12,
+        borderWidth: 1.3,
+        borderColor: '#000',
+        paddingVertical: 14,
+        paddingHorizontal: 35,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        marginHorizontal: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 20,
+        paddingHorizontal: 10,
+    },
     buttonText: {
         color: '#000',
         fontWeight: '600',
         fontSize: 16,
         textAlign: 'center',
+    },
+    buttonIcon: {
+        width: 20,
+        height: 20,
+        marginRight: 8,
+        tintColor: '#000',
     },
 });
 
@@ -152,12 +181,35 @@ const ViewForm = () => {
                             source={getFormImage()}
                             style={styles.formImage}
                         />
-                        <TouchableOpacity 
-                            style={styles.editButton}
-                            onPress={() => navigation.navigate('EditForm', { formData })}
-                        >
-                            <Text style={styles.buttonText}>Edit Form</Text>
-                        </TouchableOpacity>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity 
+                                style={styles.editButton}
+                                onPress={() => navigation.navigate('EditForm', { formData })}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Image 
+                                        source={require('../../assets/edit.png')} 
+                                        style={styles.buttonIcon}
+                                    />
+                                    <Text style={styles.buttonText}>Edit</Text>
+                                </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={styles.downloadButton}
+                                onPress={() => {
+                                    // TODO: Implement download functionality
+                                    Alert.alert('Download', 'Download functionality will be implemented soon');
+                                }}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Image 
+                                        source={require('../../assets/download.png')} 
+                                        style={styles.buttonIcon}
+                                    />
+                                    <Text style={styles.buttonText}>Download</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </Card>
             </View>
