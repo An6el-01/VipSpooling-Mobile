@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switch, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Switch, TextInput, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '../hooks/hooks';
 import { toggleTheme } from '../store/themeSlice';
@@ -205,25 +205,37 @@ const EditProfile = () => {
             setLoading(true);
             setError(null);
 
-            // Make API call to update user attributes
-            const response = await fetch(`${endpoints.users}/update`, {
+            const updateData = {
+                currentEmail: userAttributes.email,
+                newEmail: email !== userAttributes.email ? email : undefined,
+                newName: name !== userAttributes.name ? name : undefined
+            };
+
+            console.log('Sending update request with data:', updateData);
+
+            const response = await fetch(endpoints.updateUser, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${authState.accessToken}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    name,
-                    email,
-                    // Only include role if user has permission to change it
-                    ...(userGroups.includes('Admin') && { role })
-                })
+                body: JSON.stringify(updateData)
             });
 
+            const responseText = await response.text();
+            console.log('Raw server response:', responseText);
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse response:', parseError);
+                throw new Error(`Server returned invalid response: ${responseText}`);
+            }
+
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to update profile: ${response.status} ${errorText}`);
+                throw new Error(data.error || 'Failed to update profile');
             }
 
             // Update Redux state with new values
@@ -233,11 +245,20 @@ const EditProfile = () => {
                 role: userGroups[0] || 'User'
             }));
 
-            // Navigate back to settings
-            navigation.goBack();
+            Alert.alert(
+                'Success',
+                'Profile updated successfully',
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => navigation.goBack(),
+                    },
+                ]
+            );
         } catch (err) {
             console.error('Error updating profile:', err);
             setError(err.message);
+            Alert.alert('Error', err.message || 'Failed to update profile');
             if (err.message.includes('authentication') || err.message.includes('token')) {
                 navigation.navigate('SignIn');
             }

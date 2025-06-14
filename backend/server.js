@@ -208,7 +208,6 @@ app.post('/api/users/verify-temp-password',
 );
 
 
-
 // Get all templates from S3
 app.get('/api/templates', async (req, res) => {
     try {

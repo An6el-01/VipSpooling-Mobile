@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, TextInput, TouchableWithoutFeedback, Keyboard, ActivityIndicator, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../../hooks/hooks';
 import { toggleTheme } from '../../store/themeSlice';
 import Card from '../../components/Card';
@@ -180,11 +180,14 @@ const MyTeam = () => {
         }
     }, [authState.isAuthenticated, authState.accessToken]);
 
-    useEffect(() => {
-        if (authState.accessToken) {
-            fetchUsers();
-        }
-    }, [authState.accessToken]);
+    // Use useFocusEffect to fetch users every time the screen is focused
+    useFocusEffect(
+        React.useCallback(() => {
+            if (authState.accessToken) {
+                fetchUsers();
+            }
+        }, [authState.accessToken])
+    );
 
     const fetchUsers = async () => {
         try {
