@@ -19,7 +19,8 @@
           "photosPermission": "The app needs access to your photos to let you upload images.",
           "cameraPermission": "The app needs access to your camera to take photos."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "ios": {
       "supportsTablet": true,

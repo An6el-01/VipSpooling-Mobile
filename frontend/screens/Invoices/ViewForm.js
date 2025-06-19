@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Alert, ActivityIndicator, Linking } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../../hooks/hooks';
 import { toggleTheme } from '../../store/themeSlice';
 import Card from '../../components/Card';
+import * as FileSystem from 'expo-file-system';
+import { endpoints } from '../../config/config';
 
 const styles = StyleSheet.create({
     background: {
@@ -56,7 +58,34 @@ const styles = StyleSheet.create({
     formImage: {
         width: 340,
         height: 480,
-        resizeMode:'contain',
+        resizeMode: 'contain',
+    },
+    pdfContainer: {
+        width: 340,
+        height: 480,
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+    },
+    pdfText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    viewPdfButton: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    viewPdfButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
     },
     editButton:{
         backgroundColor: '#FFD700',
@@ -111,6 +140,12 @@ const styles = StyleSheet.create({
         marginRight: 8,
         tintColor: '#000',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 480,
+    },
 });
 
 const ViewForm = () => {
@@ -118,23 +153,132 @@ const ViewForm = () => {
     const route = useRoute();
     const isDarkMode = useAppSelector((state) => state.theme.isDarkMode);
     const dispatch = useAppDispatch();
+    const [pdfUrl, setPdfUrl] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     // Get the form data from navigation params
     const { formData } = route.params || {};
 
+    const generatePDF = async () => {
+        if (!formData || formData._typename !== 'Invoice Form') return;
+
+        setIsLoading(true);
+        try {
+            console.log('Sending request to generate PDF...');
+            const response = await fetch(endpoints.generateInvoicePDF, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+            console.log('Response from server:', data);
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to generate PDF');
+            }
+
+            console.log('PDF URL received:', data.pdfUrl);
+            setPdfUrl(data.pdfUrl);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            Alert.alert('Error', 'Failed to generate PDF');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (formData?._typename === 'Invoice Form') {
+            generatePDF();
+        }
+    }, [formData]);
+
+    const handleViewPDF = async () => {
+        if (!pdfUrl) {
+            Alert.alert('Error', 'PDF not yet generated');
+            return;
+        }
+
+        try {
+            const supported = await Linking.canOpenURL(pdfUrl);
+            if (supported) {
+                await Linking.openURL(pdfUrl);
+            } else {
+                Alert.alert('Error', 'Cannot open PDF on this device');
+            }
+        } catch (error) {
+            console.error('Error opening PDF:', error);
+            Alert.alert('Error', 'Failed to open PDF');
+        }
+    };
+
+    const handleDownload = async () => {
+        if (!pdfUrl) {
+            Alert.alert('Error', 'PDF not yet generated');
+            return;
+        }
+
+        try {
+            const fileName = `invoice-${formData.WorkTicketID || 'Unknown'}-${Date.now()}.pdf`;
+            const downloadDir = FileSystem.documentDirectory;
+            const destinationUri = downloadDir + fileName;
+
+            console.log('Downloading PDF from:', pdfUrl);
+            const downloadResult = await FileSystem.downloadAsync(
+                pdfUrl,
+                destinationUri
+            );
+
+            console.log('Download result:', downloadResult);
+
+            if (downloadResult.status === 200) {
+                Alert.alert('Success', `PDF saved to ${destinationUri}`);
+            } else {
+                throw new Error('Download failed');
+            }
+        } catch (error) {
+            console.error('Error downloading PDF:', error);
+            Alert.alert('Error', 'Failed to download PDF');
+        }
+    };
+
     const backgroundImage = isDarkMode
         ? require('../../assets/DarkMode.jpg')
-        : require('../../assets/LightMode.jpg')
+        : require('../../assets/LightMode.jpg');
 
-    // Determine which form image to show based on _typename
-    const getFormImage = () => {
-        if (formData?._typename === 'JSA Form') {
-            return require('../../assets/JSAForm.jpg');
+    const renderContent = () => {
+        if (isLoading) {
+            return (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#0000ff" />
+                    <Text>Generating PDF...</Text>
+                </View>
+            );
         }
-        if (formData?._typename === 'Invoice Form') {
-            return require('../../assets/InvoiceForm.jpg');
+
+        if (pdfUrl) {
+            return (
+                <View style={styles.pdfContainer}>
+                    <Text style={styles.pdfText}>PDF Generated Successfully!</Text>
+                    <TouchableOpacity 
+                        style={styles.viewPdfButton}
+                        onPress={handleViewPDF}
+                    >
+                        <Text style={styles.viewPdfButtonText}>View PDF</Text>
+                    </TouchableOpacity>
+                </View>
+            );
         }
-        return require('../../assets/CapillaryTubingReportForm_page-0001.jpg');
+
+        return (
+            <Image
+                source={require('../../assets/InvoiceForm.jpg')}
+                style={styles.formImage}
+            />
+        );
     };
 
     return(
@@ -177,10 +321,7 @@ const ViewForm = () => {
                 {/**FORM VIEW SECTION*/}
                 <Card style={[{marginTop: '40', backgroundColor:'#EAE7E7' }]}>
                     <View>
-                        <Image
-                            source={getFormImage()}
-                            style={styles.formImage}
-                        />
+                        {renderContent()}
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity 
                                 style={styles.editButton}
@@ -195,11 +336,12 @@ const ViewForm = () => {
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity 
-                                style={styles.downloadButton}
-                                onPress={() => {
-                                    // TODO: Implement download functionality
-                                    Alert.alert('Download', 'Download functionality will be implemented soon');
-                                }}
+                                style={[
+                                    styles.downloadButton,
+                                    !pdfUrl && { opacity: 0.5 }
+                                ]}
+                                onPress={handleDownload}
+                                disabled={!pdfUrl}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Image 
