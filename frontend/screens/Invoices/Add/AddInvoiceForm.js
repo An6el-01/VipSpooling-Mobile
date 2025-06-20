@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '../../../hooks/hooks';
 import { toggleTheme } from '../../../store/themeSlice';
 import Card from '../../../components/Card';
@@ -551,6 +551,7 @@ const AddInvoiceForm = () => {
     console.log('AddInvoiceForm component rendering');
     
     const navigation = useNavigation();
+    const route = useRoute();
     const isDarkMode = useAppSelector((state) => state.theme.isDarkMode);
     const { idToken, userAttributes } = useAppSelector((state) => {
         console.log('Auth selector called, current idToken:', !!idToken);
@@ -564,6 +565,10 @@ const AddInvoiceForm = () => {
         return today.toISOString().split('T')[0]; // This will give 'YYYY-MM-DD' format
     });
     const [showSignatureModal, setShowSignatureModal] = useState(false);
+
+    // Check if we're in editing mode
+    const isEditing = route.params?.isEditing || false;
+    const existingFormData = route.params?.formData || null;
 
     // Initialize spooler name once
     useEffect(() => {
@@ -579,6 +584,86 @@ const AddInvoiceForm = () => {
             }
         }
     }, [idToken, userAttributes?.name]);
+
+    // Populate form fields when editing
+    useEffect(() => {
+        if (isEditing && existingFormData) {
+            console.log('Populating form with existing data:', existingFormData);
+            
+            // Populate basic fields
+            setWorkTicketID(existingFormData.WorkTicketID || '');
+            setFormattedDate(existingFormData.InvoiceDate || formattedDate);
+            setWorkType(existingFormData.WorkType || '');
+            setCableCompany(existingFormData.CableCompany || '');
+            setCableCompanyLocation(existingFormData.CableCompanyLocation || '');
+            setOilCompany(existingFormData.OilCompany || '');
+            setWellNumber(existingFormData.WellNumber?.toString() || '');
+            setWellName(existingFormData.WellNumberName || '');
+            setNotes(existingFormData.Notes || '');
+            setCableLength(existingFormData.CableLength?.toString() || '');
+            setCableType(existingFormData.CableType || '');
+            setReelNumber(existingFormData.ReelNumber || '');
+            setExtraCharges(existingFormData.ExtraCharges?.toString() || '');
+            setSignature(existingFormData.CustomerSignature || null);
+
+            // Populate labor costs
+            if (existingFormData.LaborCosts && Array.isArray(existingFormData.LaborCosts)) {
+                const laborData = {};
+                existingFormData.LaborCosts.forEach(item => {
+                    switch (item.type) {
+                        case 'Load/Unload':
+                            laborData.loadUnload = { rate: item.rate?.toString() || '', qty: item.qty?.toString() || '', amount: item.amount?.toString() || '' };
+                            break;
+                        case 'Spooler Miles':
+                            laborData.spoolerMiles = { rate: item.rate?.toString() || '', qty: item.qty?.toString() || '', amount: item.amount?.toString() || '' };
+                            break;
+                        case 'Travel Time':
+                            laborData.travelTime = { rate: item.rate?.toString() || '', qty: item.qty?.toString() || '', amount: item.amount?.toString() || '' };
+                            break;
+                        case 'Standby Time':
+                            laborData.standbyTime = { rate: item.rate?.toString() || '', qty: item.qty?.toString() || '', amount: item.amount?.toString() || '' };
+                            break;
+                        case 'Spooler Labor':
+                            laborData.spoolerLabor = { rate: item.rate?.toString() || '', qty: item.qty?.toString() || '', amount: item.amount?.toString() || '' };
+                            break;
+                    }
+                });
+                setLaborCosts(laborData);
+            }
+
+            // Populate job types
+            if (existingFormData.JobType && Array.isArray(existingFormData.JobType)) {
+                const jobTypes = existingFormData.JobType;
+                if (jobTypes.includes('install')) {
+                    setMainJobType('install');
+                } else if (jobTypes.includes('pull')) {
+                    setMainJobType('pull');
+                }
+                
+                setAdditionalJobTypes({
+                    gasLift: jobTypes.includes('gasLift'),
+                    gasInstall: jobTypes.includes('gasInstall'),
+                    ctSpooler: jobTypes.includes('CTSpooler'),
+                    cableSpooler: jobTypes.includes('CableSpooler'),
+                    comboSpooler: jobTypes.includes('ComboSpooler'),
+                    technicianLaydown: jobTypes.includes('TechnicianLaydown'),
+                });
+            }
+
+            // Populate consumables
+            if (existingFormData.Consumables && Array.isArray(existingFormData.Consumables)) {
+                const consumableData = existingFormData.Consumables.map((item, index) => ({
+                    id: index,
+                    item: item.item || '',
+                    qty: item.qty?.toString() || '',
+                    rate: item.rate?.toString() || '',
+                    amount: item.amount?.toString() || ''
+                }));
+                setConsumableRows(consumableData);
+                setNextRowId(consumableData.length);
+            }
+        }
+    }, [isEditing, existingFormData]);
 
     const [nextRowId, setNextRowId] = useState(1);
 
@@ -985,7 +1070,7 @@ const AddInvoiceForm = () => {
                             {/**HEADER SECTION */}
                             <View style={styles.header}>
                                 <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000'}]}>
-                                    Add New Invoice Form
+                                    {isEditing ? 'Edit Invoice Form' : 'Add New Invoice Form'}
                                 </Text>
                                 <TouchableOpacity
                                     style={styles.goBackButton}
@@ -1949,7 +2034,7 @@ const AddInvoiceForm = () => {
                                 accessibilityLabel="Finish Invoice Form"
                                  >
                                     <Text style={styles.finishButtonText}>
-                                        Finish Invoice Form
+                                        {isEditing ? 'Update Invoice Form' : 'Finish Invoice Form'}
                                     </Text>
                                 </TouchableOpacity>                        
                             </View>

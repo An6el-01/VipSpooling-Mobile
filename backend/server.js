@@ -1101,16 +1101,16 @@ app.post('/api/generateInvoicePDF', async (req, res) => {
         const fontSize = 10;
         const textColor = rgb(0, 0, 0);
 
-        // Work Information
-        page.drawText(formData.WorkTicketID || 'N/A', { x: 100, y: 825, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.InvoiceDate || 'N/A', { x: 46.8, y: 804, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.Spooler || 'N/A', { x: 62.9, y: 779, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.WorkType || 'N/A', { x: 77.5, y: 759, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.CableCompany || 'N/A', { x: 99.8, y: 714, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.CableCompanyLocation || 'N/A', { x: 144, y: 694, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.OilCompany || 'N/A', { x: 84.4, y: 669, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.WellNumber?.toString() || 'N/A', { x: 402.3, y: 694, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.WellNumberName || 'N/A', { x: 392.3, y: 669, size: fontSize, font: helveticaFont, color: textColor });
+        // Work Information DONE!!
+        page.drawText(formData.WorkTicketID || 'N/A', { x: 100, y: 830, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.InvoiceDate || 'N/A', { x: 46.8, y: 806, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.Spooler || 'N/A', { x: 62.9, y: 783, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.WorkType || 'N/A', { x: 77.5, y: 763, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.CableCompany || 'N/A', { x: 108, y: 722, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.CableCompanyLocation || 'N/A', { x: 152, y: 698, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.OilCompany || 'N/A', { x: 91.4, y: 675, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.WellNumber?.toString() || 'N/A', { x: 407.3, y: 696, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.WellNumberName || 'N/A', { x: 405.3, y: 675, size: fontSize, font: helveticaFont, color: textColor });
 
         // Job Type Checkboxes
         const checkboxSize = 12;
@@ -1143,13 +1143,23 @@ app.post('/api/generateInvoicePDF', async (req, res) => {
             page.drawText('X', { x: 447.67, y: 500, size: checkboxSize, font: helveticaFont, color: textColor });
         }
 
+        // Labor Costs
+        let laborY = 630;
+        const laborRowHeight = 18.5;
+        formData.LaborCosts?.forEach((labor) => {
+            page.drawText(labor.qty?.toString() || '0', { x: 327, y: laborY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(`$${labor.rate || '0.00'}`, { x: 135, y: laborY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(`$${labor.amount?.toFixed(2) || '0.00'}`, { x: 489, y: laborY, size: fontSize, font: helveticaFont, color: textColor });
+            laborY -= laborRowHeight;
+        });
+
         // Consumables
-        let currentY = 550;
-        const consumableRowHeight = 26;
+        let currentY = 453;
+        const consumableRowHeight = 26.5;
         formData.Consumables?.forEach((consumable) => {
-            page.drawText(consumable.item || 'N/A', { x: 52, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
-            page.drawText(consumable.qty?.toString() || '0', { x: 260, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
-            page.drawText(`$${consumable.rate || '0.00'}`, { x: 360, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(consumable.item || 'N/A', { x: 58, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(consumable.qty?.toString() || '0', { x: 262, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(`$${consumable.rate || '0.00'}`, { x: 365, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
             page.drawText(`$${consumable.amount?.toFixed(2) || '0.00'}`, { x: 489, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
             currentY -= consumableRowHeight;
         });
@@ -1192,13 +1202,13 @@ app.post('/api/generateInvoicePDF', async (req, res) => {
         }
 
         // Footer
-        page.drawText(formData.CableLength?.toString() || 'N/A', { x: 105, y: 68, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.ReelNumber || 'N/A', { x: 290, y: 68, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.CableType || 'N/A', { x: 82, y: 47, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(`$${formData.ExtraCharges?.toFixed(2) || '0.00'}`, { x: 290, y: 47, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.CableLength?.toString() || 'N/A', { x: 108, y: 70, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.ReelNumber || 'N/A', { x: 292, y: 61, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.CableType || 'N/A', { x: 82, y: 48, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(`$${formData.ExtraCharges?.toFixed(2) || '0.00'}`, { x: 293, y: 37, size: fontSize, font: helveticaFont, color: textColor });
 
         // Invoice Total
-        page.drawText(`$${formData.InvoiceTotal?.toFixed(2) || '0.00'}`, { x: 90, y: 30, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(`$${formData.InvoiceTotal?.toFixed(2) || ''}`, { x: 93, y: 25, size: fontSize, font: helveticaFont, color: textColor });
 
         // Customer Signature
         if (formData.CustomerSignature) {
@@ -1207,7 +1217,7 @@ app.post('/api/generateInvoicePDF', async (req, res) => {
                 const imageBuffer = Buffer.from(formData.CustomerSignature, 'base64');
                 console.log('Embedding signature as PNG...');
                 const signatureImage = await pdfDoc.embedPng(imageBuffer);
-                page.drawImage(signatureImage, { x: 410, y: 40, width: 80, height: 40 });
+                page.drawImage(signatureImage, { x: 450, y: 36, width: 80, height: 40 });
                 console.log('Signature drawn on page.');
             } catch (error) {
                 console.error('Error embedding signature to PDF:', error);
@@ -1229,7 +1239,7 @@ app.post('/api/generateInvoicePDF', async (req, res) => {
         await s3Client.send(new PutObjectCommand(params));
         
         // Return URL that goes through our backend instead of directly to S3
-        const pdfUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/api/pdf/${fileName}`;
+        const pdfUrl = `${process.env.FRONTEND_URL || 'http://192.168.1.69:5000'}/api/pdf/${fileName}`;
 
         res.status(200).json({
             success: true,

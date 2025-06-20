@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '../../../hooks/hooks';
 import { toggleTheme } from '../../../store/themeSlice';
 import Card from '../../../components/Card';
@@ -361,6 +361,7 @@ const AddCapillaryForm = () => {
     console.log('AddCapillaryForm component rendering');
     
     const navigation = useNavigation();
+    const route = useRoute();
     const isDarkMode = useAppSelector((state) => state.theme.isDarkMode);
     const { idToken, userAttributes } = useAppSelector((state) => {
         console.log('Auth selector called, current idToken:', !!idToken);
@@ -406,6 +407,10 @@ const AddCapillaryForm = () => {
     const [showMetallurgyPicker, setShowMetallurgyPicker] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
 
+    // Check if we're in editing mode
+    const isEditing = route.params?.isEditing || false;
+    const existingFormData = route.params?.formData || null;
+
     const capillarySizeOptions = ['1/4', '3/8'];
     const metallurgyOptions = ['825', '2205'];
 
@@ -427,6 +432,20 @@ const AddCapillaryForm = () => {
             }
         }
     }, [idToken, userAttributes?.name]);
+
+    // Populate form fields when editing
+    useEffect(() => {
+        if (isEditing && existingFormData) {
+            console.log('Populating Capillary form with existing data:', existingFormData);
+            
+            // Populate basic fields
+            setFormattedDate(existingFormData.Date || formattedDate);
+            setTechnicianName(existingFormData.TechnicianName || technicianName);
+            
+            // Note: You'll need to add more field mappings based on your Capillary form structure
+            // This is a basic example - you may need to add more fields based on your actual form data
+        }
+    }, [isEditing, existingFormData]);
 
     // Handle cleanup with useCallback to maintain reference stability
     const cleanupFunction = useCallback(() => {
@@ -570,7 +589,7 @@ const AddCapillaryForm = () => {
                             {/**HEADER SECTION */}
                             <View style={styles.header}>
                                 <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000'}]}>
-                                    Add New Capillary Tubing Report Form
+                                    {isEditing ? 'Edit Capillary Tubing Report Form' : 'Add New Capillary Tubing Report Form'}
                                 </Text>
                                 <TouchableOpacity
                                     style={styles.goBackButton}
@@ -1414,7 +1433,7 @@ const AddCapillaryForm = () => {
                                         accessibilityLabel="Finish Capillary Form"
                                     >
                                         <Text style={styles.finishButtonText}>
-                                            Finish Capillary Form
+                                            {isEditing ? 'Update Capillary Form' : 'Finish Capillary Form'}
                                         </Text>
                                     </TouchableOpacity>
                                 </View>

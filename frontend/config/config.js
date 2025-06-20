@@ -1,4 +1,4 @@
-const API_URL = process.env.API_URL || 'http://localhost:5000';
+const API_URL = process.env.API_URL || 'http://192.168.1.69:5000';
 
 export const endpoints = {
     users: `${API_URL}/api/users`,

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Alert, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../../hooks/hooks';
 import { toggleTheme } from '../../store/themeSlice';
 import Card from '../../components/Card';
 import * as FileSystem from 'expo-file-system';
 import { endpoints } from '../../config/config';
+import { WebView } from 'react-native-webview';
 
 const styles = StyleSheet.create({
     background: {
@@ -70,6 +71,17 @@ const styles = StyleSheet.create({
         borderColor: '#ccc',
         borderRadius: 8,
     },
+    webViewContainer: {
+        width: 340,
+        height: 480,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    webView: {
+        flex: 1,
+    },
     pdfText: {
         fontSize: 16,
         color: '#666',
@@ -78,26 +90,32 @@ const styles = StyleSheet.create({
     },
     viewPdfButton: {
         backgroundColor: '#007AFF',
+        borderRadius: 12,
+        borderWidth: 1.3,
+        borderColor: '#000',
+        paddingVertical: 12,
         paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 8,
-    },
-    viewPdfButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        marginHorizontal: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
     editButton:{
         backgroundColor: '#FFD700',
         borderRadius: 12,  
         borderWidth: 1.3,
         borderColor: '#000',
-        paddingVertical: 14,  
-        paddingHorizontal: 35,
+        paddingVertical: 12,  
+        paddingHorizontal: 20,
         alignItems: 'center',  
         justifyContent: 'center',
         flex: 1,
-        marginHorizontal: 5,
+        marginHorizontal: 3,
         shadowColor: '#000',  
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
@@ -109,12 +127,12 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1.3,
         borderColor: '#000',
-        paddingVertical: 14,
-        paddingHorizontal: 35,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
-        marginHorizontal: 5,
+        marginHorizontal: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
@@ -131,7 +149,7 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#000',
         fontWeight: '600',
-        fontSize: 16,
+        fontSize: 14,
         textAlign: 'center',
     },
     buttonIcon: {
@@ -196,24 +214,6 @@ const ViewForm = () => {
         }
     }, [formData]);
 
-    const handleViewPDF = async () => {
-        if (!pdfUrl) {
-            Alert.alert('Error', 'PDF not yet generated');
-            return;
-        }
-
-        try {
-            const supported = await Linking.canOpenURL(pdfUrl);
-            if (supported) {
-                await Linking.openURL(pdfUrl);
-            } else {
-                Alert.alert('Error', 'Cannot open PDF on this device');
-            }
-        } catch (error) {
-            console.error('Error opening PDF:', error);
-            Alert.alert('Error', 'Failed to open PDF');
-        }
-    };
 
     const handleDownload = async () => {
         if (!pdfUrl) {
@@ -222,11 +222,99 @@ const ViewForm = () => {
         }
 
         try {
-            const fileName = `invoice-${formData.WorkTicketID || 'Unknown'}-${Date.now()}.pdf`;
-            const downloadDir = FileSystem.documentDirectory;
-            const destinationUri = downloadDir + fileName;
+            // Show download options to user
+            Alert.alert(
+                'Download PDF',
+                'Choose download location:',
+                [
+                    {
+                        text: 'Documents Folder',
+                        onPress: () => downloadToLocation('documents')
+                    },
+                    {
+                        text: 'Downloads Folder',
+                        onPress: () => downloadToLocation('downloads')
+                    },
+                    {
+                        text: 'Custom Location',
+                        onPress: () => downloadToLocation('custom')
+                    },
+                    {
+                        text: 'Cancel',
+                        style: 'cancel'
+                    }
+                ]
+            );
+        } catch (error) {
+            console.error('Error in download options:', error);
+            Alert.alert('Error', 'Failed to show download options');
+        }
+    };
 
+    const downloadToLocation = async (location) => {
+        try {
+            const fileName = `invoice-${formData.WorkTicketID || 'Unknown'}-${Date.now()}.pdf`;
+            let destinationUri;
+
+            switch (location) {
+                case 'documents':
+                    destinationUri = FileSystem.documentDirectory + fileName;
+                    break;
+                case 'downloads':
+                    // On mobile, we'll use the documents directory as downloads
+                    destinationUri = FileSystem.documentDirectory + 'Downloads/' + fileName;
+                    // Create Downloads directory if it doesn't exist
+                    const downloadsDir = FileSystem.documentDirectory + 'Downloads/';
+                    const dirInfo = await FileSystem.getInfoAsync(downloadsDir);
+                    if (!dirInfo.exists) {
+                        await FileSystem.makeDirectoryAsync(downloadsDir, { intermediates: true });
+                    }
+                    break;
+                case 'custom':
+                    // For custom location, we'll use the documents directory and let user know
+                    destinationUri = FileSystem.documentDirectory + fileName;
+                    Alert.alert(
+                        'Custom Location',
+                        `PDF will be saved to: ${destinationUri}\n\nYou can move it to your preferred location using your device's file manager.`,
+                        [{ text: 'OK' }]
+                    );
+                    break;
+                default:
+                    destinationUri = FileSystem.documentDirectory + fileName;
+            }
+
+            // Check if file already exists and ask user if they want to overwrite
+            const fileInfo = await FileSystem.getInfoAsync(destinationUri);
+            if (fileInfo.exists) {
+                Alert.alert(
+                    'File Exists',
+                    'A file with this name already exists. Do you want to overwrite it?',
+                    [
+                        {
+                            text: 'Cancel',
+                            style: 'cancel'
+                        },
+                        {
+                            text: 'Overwrite',
+                            onPress: () => performDownload(destinationUri)
+                        }
+                    ]
+                );
+                return;
+            }
+
+            await performDownload(destinationUri);
+        } catch (error) {
+            console.error('Error in downloadToLocation:', error);
+            Alert.alert('Error', 'Failed to prepare download. Please try again.');
+        }
+    };
+
+    const performDownload = async (destinationUri) => {
+        try {
             console.log('Downloading PDF from:', pdfUrl);
+            console.log('Saving to:', destinationUri);
+
             const downloadResult = await FileSystem.downloadAsync(
                 pdfUrl,
                 destinationUri
@@ -235,13 +323,33 @@ const ViewForm = () => {
             console.log('Download result:', downloadResult);
 
             if (downloadResult.status === 200) {
-                Alert.alert('Success', `PDF saved to ${destinationUri}`);
+                // Get file info after download
+                const fileInfo = await FileSystem.getInfoAsync(destinationUri);
+                const fileSize = fileInfo.size ? `${(fileInfo.size / 1024).toFixed(1)} KB` : 'Unknown size';
+
+                Alert.alert(
+                    'Download Successful',
+                    `PDF saved successfully!\n\nLocation: ${destinationUri}\nSize: ${fileSize}\n\nYou can find it in your device's file manager.`,
+                    [
+                        {
+                            text: 'Open File Manager',
+                            onPress: () => {
+                                // On some devices, this might open the file manager
+                                // The actual behavior depends on the device and OS
+                                console.log('User requested to open file manager');
+                            }
+                        },
+                        {
+                            text: 'OK'
+                        }
+                    ]
+                );
             } else {
                 throw new Error('Download failed');
             }
         } catch (error) {
             console.error('Error downloading PDF:', error);
-            Alert.alert('Error', 'Failed to download PDF');
+            Alert.alert('Error', 'Failed to download PDF. Please try again.');
         }
     };
 
@@ -261,14 +369,25 @@ const ViewForm = () => {
 
         if (pdfUrl) {
             return (
-                <View style={styles.pdfContainer}>
-                    <Text style={styles.pdfText}>PDF Generated Successfully!</Text>
-                    <TouchableOpacity 
-                        style={styles.viewPdfButton}
-                        onPress={handleViewPDF}
-                    >
-                        <Text style={styles.viewPdfButtonText}>View PDF</Text>
-                    </TouchableOpacity>
+                <View style={styles.webViewContainer}>
+                    <WebView
+                        source={{ uri: pdfUrl }}
+                        style={styles.webView}
+                        javaScriptEnabled={true}
+                        domStorageEnabled={true}
+                        startInLoadingState={true}
+                        renderLoading={() => (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="large" color="#0000ff" />
+                                <Text>Loading PDF...</Text>
+                            </View>
+                        )}
+                        onError={(syntheticEvent) => {
+                            const { nativeEvent } = syntheticEvent;
+                            console.error('WebView error:', nativeEvent);
+                            Alert.alert('Error', 'Failed to load PDF. Please try again.');
+                        }}
+                    />
                 </View>
             );
         }
@@ -325,7 +444,26 @@ const ViewForm = () => {
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity 
                                 style={styles.editButton}
-                                onPress={() => navigation.navigate('EditForm', { formData })}
+                                onPress={() => {
+                                    // Navigate to the appropriate form based on _typename
+                                    if (formData?._typename === 'Invoice Form') {
+                                        navigation.navigate('AddInvoiceForm', { 
+                                            formData: formData,
+                                            isEditing: true 
+                                        });
+                                    } else if (formData?._typename === 'JSA Form') {
+                                        navigation.navigate('AddJsaForm', { 
+                                            formData: formData,
+                                            isEditing: true 
+                                        });
+                                    } else {
+                                        // Default to Capillary Form for any other type
+                                        navigation.navigate('AddCapillaryForm', { 
+                                            formData: formData,
+                                            isEditing: true 
+                                        });
+                                    }
+                                }}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Image 

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView, Platform, Modal, Dimensions, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '../../../hooks/hooks';
 import { toggleTheme } from '../../../store/themeSlice';
 import Card from '../../../components/Card';
@@ -333,6 +333,7 @@ const styles = StyleSheet.create({
 
 const AddJsaForm = () => {
     const navigation = useNavigation();
+    const route = useRoute();
     const isDarkMode = useAppSelector((state) => state.theme.isDarkMode);
     const dispatch = useAppDispatch();
     const [formDate, setFormDate] = useState(new Date());
@@ -359,6 +360,10 @@ const AddJsaForm = () => {
     ]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Check if we're in editing mode
+    const isEditing = route.params?.isEditing || false;
+    const existingFormData = route.params?.formData || null;
+
     const backgroundImage = isDarkMode 
     ? require('../../../assets/DarkMode.jpg')
     : require('../../../assets/LightMode.jpg')
@@ -366,6 +371,43 @@ const AddJsaForm = () => {
     useEffect(() => {
         fetchWorkTicketID();
     }, []);
+
+    // Populate form fields when editing
+    useEffect(() => {
+        if (isEditing && existingFormData) {
+            console.log('Populating JSA form with existing data:', existingFormData);
+            
+            // Populate basic fields
+            setWorkTicketID(existingFormData.WorkTicketID || '');
+            setCustomerName(existingFormData.CustomerName || '');
+            setCustomerLocation(existingFormData.Location || '');
+            setFormattedDate(existingFormData.FormDate || formattedDate);
+
+            // Populate steps
+            if (existingFormData.Steps && Array.isArray(existingFormData.Steps)) {
+                const stepsData = existingFormData.Steps.map((step, index) => ({
+                    stepNo: (index + 1).toString(),
+                    task: step.step || '',
+                    hazards: step.safetyEnvironmental || '',
+                    controls: step.controls || '',
+                    ppe: step.ppe || '',
+                    riskRating: step.risk || '',
+                    notes: step.notes || ''
+                }));
+                setSteps(stepsData);
+            }
+
+            // Populate personnel
+            if (existingFormData.Personnel && Array.isArray(existingFormData.Personnel)) {
+                const personnelData = existingFormData.Personnel.map(person => ({
+                    personName: person.PersonName || '',
+                    role: person.Role || '',
+                    signature: person.Signature || ''
+                }));
+                setPersonnel(personnelData);
+            }
+        }
+    }, [isEditing, existingFormData]);
 
     useScreenCleanup(() => {
         if (signatureRef.current) {
@@ -586,7 +628,7 @@ const AddJsaForm = () => {
                                         </Text>
                                     </TouchableOpacity>
                                     <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                        Add New JSA Form
+                                        {isEditing ? 'Edit JSA Form' : 'Add New JSA Form'}
                                     </Text>
                                     <TouchableOpacity 
                                         onPress={() => dispatch(toggleTheme())}
@@ -903,7 +945,7 @@ const AddJsaForm = () => {
                                 accessibilityLabel="Finish JSA Form"
                             >
                                 <Text style={styles.finishButtonText}>
-                                    {isSubmitting ? 'Saving...' : 'Finish JSA Form'}
+                                    {isSubmitting ? 'Saving...' : (isEditing ? 'Update JSA Form' : 'Finish JSA Form')}
                                 </Text>
                             </TouchableOpacity>
                         </View>
