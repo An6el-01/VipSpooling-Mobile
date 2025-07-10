@@ -5,6 +5,7 @@ import { useAppSelector, useAppDispatch } from '../../hooks/hooks';
 import { toggleTheme } from '../../store/themeSlice';
 import Card from '../../components/Card';
 import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { endpoints } from '../../config/config';
 import { WebView } from 'react-native-webview';
 
@@ -178,12 +179,24 @@ const ViewForm = () => {
     const { formData } = route.params || {};
 
     const generatePDF = async () => {
-        if (!formData || formData._typename !== 'Invoice Form') return;
+        if (!formData) return;
 
         setIsLoading(true);
         try {
             console.log('Sending request to generate PDF...');
-            const response = await fetch(endpoints.generateInvoicePDF, {
+            
+            let endpoint;
+            if (formData._typename === 'Invoice Form') {
+                endpoint = endpoints.generateInvoicePDF;
+            } else if (formData._typename === 'JSA Form') {
+                endpoint = endpoints.generateJsaPDF;
+            } else {
+                console.log('No PDF generation available for this form type:', formData._typename);
+                setIsLoading(false);
+                return;
+            }
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -191,8 +204,17 @@ const ViewForm = () => {
                 body: JSON.stringify(formData)
             });
 
-            const data = await response.json();
-            console.log('Response from server:', data);
+            let data;
+            const responseText = await response.text();
+            console.log('Raw response from server:', responseText);
+            
+            try {
+                data = JSON.parse(responseText);
+                console.log('Parsed response from server:', data);
+            } catch (parseError) {
+                console.error('Failed to parse JSON response:', parseError);
+                throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 200)}`);
+            }
 
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to generate PDF');
@@ -209,7 +231,7 @@ const ViewForm = () => {
     };
 
     useEffect(() => {
-        if (formData?._typename === 'Invoice Form') {
+        if (formData?._typename === 'Invoice Form' || formData?._typename === 'JSA Form') {
             generatePDF();
         }
     }, [formData]);
@@ -222,22 +244,19 @@ const ViewForm = () => {
         }
 
         try {
+            const formType = formData._typename === 'Invoice Form' ? 'Invoice' : 'JSA';
             // Show download options to user
             Alert.alert(
-                'Download PDF',
-                'Choose download location:',
+                `Download ${formType} PDF`,
+                'Choose how to save the PDF:',
                 [
                     {
-                        text: 'Documents Folder',
+                        text: 'Share/Save PDF',
+                        onPress: () => sharePDF()
+                    },
+                    {
+                        text: 'Save to App Documents',
                         onPress: () => downloadToLocation('documents')
-                    },
-                    {
-                        text: 'Downloads Folder',
-                        onPress: () => downloadToLocation('downloads')
-                    },
-                    {
-                        text: 'Custom Location',
-                        onPress: () => downloadToLocation('custom')
                     },
                     {
                         text: 'Cancel',
@@ -251,37 +270,49 @@ const ViewForm = () => {
         }
     };
 
+    const sharePDF = async () => {
+        try {
+            const formType = formData._typename === 'Invoice Form' ? 'invoice' : 'jsa';
+            const fileName = `${formType}-${formData.WorkTicketID || 'Unknown'}-${Date.now()}.pdf`;
+            const destinationUri = FileSystem.documentDirectory + fileName;
+
+            console.log('Downloading PDF for sharing from:', pdfUrl);
+            console.log('Saving to:', destinationUri);
+
+            const downloadResult = await FileSystem.downloadAsync(
+                pdfUrl,
+                destinationUri
+            );
+
+            console.log('Download result for sharing:', downloadResult);
+
+            if (downloadResult.status === 200) {
+                // Check if sharing is available
+                const isAvailable = await Sharing.isAvailableAsync();
+                
+                if (isAvailable) {
+                    await Sharing.shareAsync(destinationUri, {
+                        mimeType: 'application/pdf',
+                        dialogTitle: `Save ${fileName}`,
+                        UTI: 'com.adobe.pdf'
+                    });
+                } else {
+                    Alert.alert('Sharing Not Available', 'Sharing is not available on this device.');
+                }
+            } else {
+                throw new Error('Download failed');
+            }
+        } catch (error) {
+            console.error('Error sharing PDF:', error);
+            Alert.alert('Error', 'Failed to share PDF. Please try again.');
+        }
+    };
+
     const downloadToLocation = async (location) => {
         try {
-            const fileName = `invoice-${formData.WorkTicketID || 'Unknown'}-${Date.now()}.pdf`;
-            let destinationUri;
-
-            switch (location) {
-                case 'documents':
-                    destinationUri = FileSystem.documentDirectory + fileName;
-                    break;
-                case 'downloads':
-                    // On mobile, we'll use the documents directory as downloads
-                    destinationUri = FileSystem.documentDirectory + 'Downloads/' + fileName;
-                    // Create Downloads directory if it doesn't exist
-                    const downloadsDir = FileSystem.documentDirectory + 'Downloads/';
-                    const dirInfo = await FileSystem.getInfoAsync(downloadsDir);
-                    if (!dirInfo.exists) {
-                        await FileSystem.makeDirectoryAsync(downloadsDir, { intermediates: true });
-                    }
-                    break;
-                case 'custom':
-                    // For custom location, we'll use the documents directory and let user know
-                    destinationUri = FileSystem.documentDirectory + fileName;
-                    Alert.alert(
-                        'Custom Location',
-                        `PDF will be saved to: ${destinationUri}\n\nYou can move it to your preferred location using your device's file manager.`,
-                        [{ text: 'OK' }]
-                    );
-                    break;
-                default:
-                    destinationUri = FileSystem.documentDirectory + fileName;
-            }
+            const formType = formData._typename === 'Invoice Form' ? 'invoice' : 'jsa';
+            const fileName = `${formType}-${formData.WorkTicketID || 'Unknown'}-${Date.now()}.pdf`;
+            const destinationUri = FileSystem.documentDirectory + fileName;
 
             // Check if file already exists and ask user if they want to overwrite
             const fileInfo = await FileSystem.getInfoAsync(destinationUri);
@@ -329,16 +360,8 @@ const ViewForm = () => {
 
                 Alert.alert(
                     'Download Successful',
-                    `PDF saved successfully!\n\nLocation: ${destinationUri}\nSize: ${fileSize}\n\nYou can find it in your device's file manager.`,
+                    `PDF saved successfully!\n\nLocation: ${destinationUri}\nSize: ${fileSize}\n\nNote: In Expo Go, this file is saved within the app's sandbox and may not be accessible from the device's main file manager. Use the "Share/Save PDF" option for better file access.`,
                     [
-                        {
-                            text: 'Open File Manager',
-                            onPress: () => {
-                                // On some devices, this might open the file manager
-                                // The actual behavior depends on the device and OS
-                                console.log('User requested to open file manager');
-                            }
-                        },
                         {
                             text: 'OK'
                         }
@@ -394,7 +417,11 @@ const ViewForm = () => {
 
         return (
             <Image
-                source={require('../../assets/InvoiceForm.jpg')}
+                source={
+                    formData?._typename === 'JSA Form' 
+                        ? require('../../assets/JSAForm.jpg')
+                        : require('../../assets/InvoiceForm.jpg')
+                }
                 style={styles.formImage}
             />
         );

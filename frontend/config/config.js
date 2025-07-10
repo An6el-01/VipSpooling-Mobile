@@ -31,6 +31,7 @@ export const endpoints = {
     //** EMAIL JS */
     sendRequestTemplate: `${API_URL}/api/email/sendRequestTemplate`,
 
-    //** GENERATE INVOICE PDF */
+    //** GENERATE PDFS */
     generateInvoicePDF: `${API_URL}/api/generateInvoicePDF`,
+    generateJsaPDF: `${API_URL}/api/generateJsaPDF`,
 }; 

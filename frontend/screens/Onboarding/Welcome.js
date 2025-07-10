@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 16,
         color: '#000',
+        textAlign: 'left',
     },
     inputField: {
         flexDirection: 'row',
@@ -218,7 +219,7 @@ const Welcome = () => {
                                     <TextInput
                                         placeholder="Enter your email"
                                         placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
-                                        style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                        style={[styles.inputText, { color: '#000' }]}
                                         value={email}
                                         onChangeText={setEmail}
                                         keyboardType="email-address"
@@ -235,7 +236,7 @@ const Welcome = () => {
                                     <TextInput
                                         placeholder="Enter temporary password"
                                         placeholderTextColor={isDarkMode ? '#5e5e5e' : '#aaa'}
-                                        style={[styles.inputText, { color: isDarkMode ? '#fff' : '#000' }]}
+                                        style={[styles.inputText, { color: '#000' }]}
                                         value={temporaryPassword}
                                         onChangeText={setTemporaryPassword}
                                         secureTextEntry={true}

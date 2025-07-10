@@ -45,7 +45,7 @@ const fillAndUploadPDF = async (
         const templateBytes = await FileSystem.readEntireFileAsync(asset.localUri, { encoding: FileSystem.EncodingType.Base64 });
         pdfDoc = await PDFDocument.load(Buffer.from(templateBytes, 'based64'));
     } catch (error) {
-        console.warn('Could not load InvoiceForm.pdf templat, creating a blank A4 page instead.', error);
+        console.warn('Could not load InvoiceForm.pdf template, creating a blank A4 page instead.', error);
         pdfDoc = await PDFDocument.create();
         pdfDoc.addPage([595, 842]);
     }

@@ -209,6 +209,7 @@ app.post('/api/users/verify-temp-password',
     }
 );
 
+/** S3 Routes */
 
 // Get all templates from S3
 app.get('/api/templates', async (req, res) => {
@@ -326,6 +327,34 @@ app.get('/api/pricingplans', async (req, res) => {
     } catch (error) {
         console.error('Error fetching pricing plans:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Serve PDF from S3 through our backend
+app.get('/api/pdf/:fileName', async (req, res) => {
+    try {
+        const { fileName } = req.params;
+        
+        const params = {
+            Bucket: 'vip-completed-invoices',
+            Key: fileName
+        };
+
+        const command = new GetObjectCommand(params);
+        const response = await s3Client.send(command);
+
+        // Set appropriate headers for PDF
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+        // Pipe the PDF stream to the response
+        response.Body.pipe(res);
+    } catch (error) {
+        console.error('Error serving PDF:', error);
+        res.status(404).json({ error: 'PDF not found' });
     }
 });
 
@@ -779,6 +808,292 @@ app.delete('/api/dynamoDB/deleteInvoiceForm/:WorkTicketID', async (req, res, nex
     }
 });
 
+// Generate PDF for Invoice Form
+app.post('/api/generateInvoicePDF', async (req, res) => {
+    try {
+        const formData = req.body;
+        
+        if (!formData || formData._typename !== 'Invoice Form') {
+            return res.status(400).json({ 
+                error: 'Invalid form data or not an invoice form' 
+            });
+        }
+
+        console.log('Starting PDF generation...');
+        let pdfDoc;
+        
+        try {
+            const templatePath = path.join(__dirname, 'assets', 'InvoiceForm.pdf');
+            const templateBytes = await fs.promises.readFile(templatePath);
+            pdfDoc = await PDFDocument.load(templateBytes);
+        } catch (error) {
+            console.warn('Could not load InvoiceForm.pdf template, creating a blank A4 page instead.', error);
+            pdfDoc = await PDFDocument.create();
+            pdfDoc.addPage([595, 842]);
+        }
+
+        let page = pdfDoc.getPage(0);
+        const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontSize = 10;
+        const textColor = rgb(0, 0, 0);
+
+        // Work Information DONE!!
+        page.drawText(formData.WorkTicketID || 'N/A', { x: 100, y: 830, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.InvoiceDate || 'N/A', { x: 46.8, y: 806, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.Spooler || 'N/A', { x: 62.9, y: 783, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.WorkType || 'N/A', { x: 77.5, y: 763, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.CableCompany || 'N/A', { x: 108, y: 722, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.CableCompanyLocation || 'N/A', { x: 152, y: 698, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.OilCompany || 'N/A', { x: 91.4, y: 675, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.WellNumber?.toString() || 'N/A', { x: 407.3, y: 696, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.WellNumberName || 'N/A', { x: 405.3, y: 675, size: fontSize, font: helveticaFont, color: textColor });
+
+        // Job Type Checkboxes
+        const checkboxSize = 12;
+        const jobTypes = formData.JobType || [];
+        
+        // Row 1
+        if (jobTypes.includes('Install')) {
+            page.drawText('X', { x: 52, y: 524, size: checkboxSize, font: helveticaFont, color: textColor });
+        }
+        if (jobTypes.includes('Pull')) {
+            page.drawText('X', { x: 52, y: 500, size: checkboxSize, font: helveticaFont, color: textColor });
+        }
+        if (jobTypes.includes('GasLift')) {
+            page.drawText('X', { x: 169, y: 526, size: checkboxSize, font: helveticaFont, color: textColor });
+        }
+        if (jobTypes.includes('GasInstall')) {
+            page.drawText('X', { x: 169, y: 500, size: checkboxSize, font: helveticaFont, color: textColor });
+        }
+        // Row 2
+        if (jobTypes.includes('CTSpooler')) {
+            page.drawText('X', { x: 294.09, y: 526, size: checkboxSize, font: helveticaFont, color: textColor });
+        }
+        if (jobTypes.includes('CableSpooler')) {
+            page.drawText('X', { x: 294.09, y: 500, size: checkboxSize, font: helveticaFont, color: textColor });
+        }
+        if (jobTypes.includes('ComboSpooler')) {
+            page.drawText('X', { x: 447.67, y: 526, size: checkboxSize, font: helveticaFont, color: textColor });
+        }
+        if (jobTypes.includes('TechnicianLaydown')) {
+            page.drawText('X', { x: 447.67, y: 500, size: checkboxSize, font: helveticaFont, color: textColor });
+        }
+
+        // Labor Costs
+        let laborY = 630;
+        const laborRowHeight = 18.5;
+        formData.LaborCosts?.forEach((labor) => {
+            page.drawText(labor.qty?.toString() || '0', { x: 327, y: laborY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(`$${labor.rate || '0.00'}`, { x: 135, y: laborY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(`$${labor.amount?.toFixed(2) || '0.00'}`, { x: 489, y: laborY, size: fontSize, font: helveticaFont, color: textColor });
+            laborY -= laborRowHeight;
+        });
+
+        // Consumables
+        let currentY = 453;
+        const consumableRowHeight = 26.5;
+        formData.Consumables?.forEach((consumable) => {
+            page.drawText(consumable.item || 'N/A', { x: 58, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(consumable.qty?.toString() || '0', { x: 262, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(`$${consumable.rate || '0.00'}`, { x: 365, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
+            page.drawText(`$${consumable.amount?.toFixed(2) || '0.00'}`, { x: 489, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
+            currentY -= consumableRowHeight;
+        });
+
+        // Notes
+        if (formData.Notes) {
+            const maxWidth = 550;
+            const lineHeight = 14;
+            let currentY = 150;
+            const words = formData.Notes.split(' ');
+            let line = '';
+            const lines = [];
+
+            for (const word of words) {
+                const testLine = line ? `${line} ${word}` : word;
+                const width = helveticaFont.widthOfTextAtSize(testLine, fontSize);
+                if (width <= maxWidth) {
+                    line = testLine;
+                } else {
+                    if (line) {
+                        lines.push(line);
+                    }
+                    line = word;
+                }
+            }
+            if (line) {
+                lines.push(line);
+            }
+
+            for (const lineText of lines) {
+                if (currentY < 50) {
+                    page = pdfDoc.addPage([595, 842]);
+                    currentY = 780;
+                    page.drawText('Notes (Continued)', { x: 18, y: currentY, size: 12, font: helveticaFont, color: textColor });
+                    currentY -= 35;
+                }
+                page.drawText(lineText, { x: 18, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
+                currentY -= lineHeight;
+            }
+        }
+
+        // Footer
+        page.drawText(formData.CableLength?.toString() || 'N/A', { x: 108, y: 70, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.ReelNumber || 'N/A', { x: 292, y: 61, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(formData.CableType || 'N/A', { x: 82, y: 48, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(`$${formData.ExtraCharges?.toFixed(2) || '0.00'}`, { x: 293, y: 37, size: fontSize, font: helveticaFont, color: textColor });
+
+        // Invoice Total
+        page.drawText(`$${formData.InvoiceTotal?.toFixed(2) || ''}`, { x: 93, y: 25, size: fontSize, font: helveticaFont, color: textColor });
+
+        // Customer Signature
+        if (formData.CustomerSignature) {
+            try {
+                console.log('Converting signature for embedding...');
+                const imageBuffer = Buffer.from(formData.CustomerSignature, 'base64');
+                console.log('Embedding signature as PNG...');
+                const signatureImage = await pdfDoc.embedPng(imageBuffer);
+                page.drawImage(signatureImage, { x: 450, y: 36, width: 80, height: 40 });
+                console.log('Signature drawn on page.');
+            } catch (error) {
+                console.error('Error embedding signature to PDF:', error);
+            }
+        }
+
+        // Save PDF
+        const pdfBytes = await pdfDoc.save();
+        
+        // Upload to S3
+        const fileName = `invoice-${formData.WorkTicketID || 'Unknown'}-${Date.now()}.pdf`;
+        const params = {
+            Bucket: 'vip-completed-invoices',
+            Key: fileName,
+            Body: Buffer.from(pdfBytes),
+            ContentType: 'application/pdf',
+        };
+
+        await s3Client.send(new PutObjectCommand(params));
+        
+        // Return URL that goes through our backend instead of directly to S3
+        const pdfUrl = `${process.env.FRONTEND_URL || 'http://192.168.1.69:5000'}/api/pdf/${fileName}`;
+
+        res.status(200).json({
+            success: true,
+            message: 'PDF generated successfully',
+            pdfUrl: pdfUrl
+        });
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to generate PDF'
+        });
+    }
+});
+
+// Generate PDF for JSA Form
+app.post('/api/generateJsaPDF', async (req, res) => {
+    try {
+        const formData = req.body;
+        
+        if (!formData || formData._typename !== 'JSA Form') {
+            return res.status(400).json({ 
+                error: 'Invalid form data or not a JSA form' 
+            });
+        }
+
+        console.log('Starting JSA PDF generation...');
+        let pdfDoc;
+        
+        try {
+            const templatePath  = path.join(__dirname, 'assets', 'JSAForm.pdf');
+            const templateBytes = await fs.promises.readFile(templatePath);
+            pdfDoc = await PDFDocument.load(templateBytes);
+        } catch (error) {
+            console.warn('Could not create JSA PDF, creating a blank A4 page instead.', error);
+            pdfDoc = await PDFDocument.create();
+            pdfDoc.addPage([595, 842]);
+        }
+
+        let page = pdfDoc.getPage(0);
+        const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontSize = 12;
+        const textColor = rgb(0, 0, 0);
+
+        // Header
+        page.drawText('JOB SAFETY ANALYSIS (JSA)', { x: 200, y: 800, size: 18, font: helveticaFont, color: textColor });
+        
+        // Customer Information
+        page.drawText(`Customer: ${formData.CustomerName || 'N/A'}`, { x: 50, y: 750, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(`Location: ${formData.Location || 'N/A'}`, { x: 50, y: 730, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(`Effective Date: ${formData.EffectiveDate || 'N/A'}`, { x: 50, y: 710, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(`Work Ticket ID: ${formData.WorkTicketID || 'N/A'}`, { x: 50, y: 690, size: fontSize, font: helveticaFont, color: textColor });
+
+        // Personnel Section
+        page.drawText('PERSONNEL:', { x: 50, y: 650, size: 14, font: helveticaFont, color: textColor });
+        
+        let personnelY = 620;
+        formData.Personnel?.forEach((person, index) => {
+            page.drawText(`${index + 1}. ${person.PersonName || 'N/A'} - ${person.Role || 'N/A'}`, { 
+                x: 70, 
+                y: personnelY, 
+                size: fontSize, 
+                font: helveticaFont, 
+                color: textColor 
+            });
+            personnelY -= 25;
+        });
+
+        // Steps Section (if available)
+        if (formData.Steps && formData.Steps.length > 0) {
+            page.drawText('JOB STEPS:', { x: 50, y: personnelY - 30, size: 14, font: helveticaFont, color: textColor });
+            
+            let stepsY = personnelY - 60;
+            formData.Steps.forEach((step, index) => {
+                page.drawText(`${index + 1}. ${step.taskStep || 'N/A'}`, { 
+                    x: 70, 
+                    y: stepsY, 
+                    size: fontSize, 
+                    font: helveticaFont, 
+                    color: textColor 
+                });
+                stepsY -= 20;
+            });
+        }
+
+        // Save PDF
+        const pdfBytes = await pdfDoc.save();
+        
+        // Upload to S3
+        const fileName = `jsa-${formData.WorkTicketID || 'Unknown'}-${Date.now()}.pdf`;
+        const params = {
+            Bucket: 'vip-completed-invoices',
+            Key: fileName,
+            Body: Buffer.from(pdfBytes),
+            ContentType: 'application/pdf',
+        };
+
+        await s3Client.send(new PutObjectCommand(params));
+        
+        // Return URL that goes through our backend instead of directly to S3
+        const pdfUrl = `${process.env.FRONTEND_URL || 'http://192.168.1.69:5000'}/api/pdf/${fileName}`;
+
+        res.status(200).json({
+            success: true,
+            message: 'JSA PDF generated successfully',
+            pdfUrl: pdfUrl
+        });
+
+    } catch (error) {
+        console.error('Error generating JSA PDF:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to generate JSA PDF'
+        });
+    }
+});
+
 //** JSA FORMS */
 
 //Invoke Lambda Function to generate Work Ticket ID
@@ -1072,217 +1387,8 @@ app.post('/api/email/sendRequestTemplate', async(req, res) => {
     }
 });
 
-// Generate PDF for Invoice Form
-app.post('/api/generateInvoicePDF', async (req, res) => {
-    try {
-        const formData = req.body;
-        
-        if (!formData || formData._typename !== 'Invoice Form') {
-            return res.status(400).json({ 
-                error: 'Invalid form data or not an invoice form' 
-            });
-        }
 
-        console.log('Starting PDF generation...');
-        let pdfDoc;
-        
-        try {
-            const templatePath = path.join(__dirname, 'assets', 'InvoiceForm.pdf');
-            const templateBytes = await fs.promises.readFile(templatePath);
-            pdfDoc = await PDFDocument.load(templateBytes);
-        } catch (error) {
-            console.warn('Could not load InvoiceForm.pdf template, creating a blank A4 page instead.', error);
-            pdfDoc = await PDFDocument.create();
-            pdfDoc.addPage([595, 842]);
-        }
 
-        let page = pdfDoc.getPage(0);
-        const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const fontSize = 10;
-        const textColor = rgb(0, 0, 0);
-
-        // Work Information DONE!!
-        page.drawText(formData.WorkTicketID || 'N/A', { x: 100, y: 830, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.InvoiceDate || 'N/A', { x: 46.8, y: 806, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.Spooler || 'N/A', { x: 62.9, y: 783, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.WorkType || 'N/A', { x: 77.5, y: 763, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.CableCompany || 'N/A', { x: 108, y: 722, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.CableCompanyLocation || 'N/A', { x: 152, y: 698, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.OilCompany || 'N/A', { x: 91.4, y: 675, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.WellNumber?.toString() || 'N/A', { x: 407.3, y: 696, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.WellNumberName || 'N/A', { x: 405.3, y: 675, size: fontSize, font: helveticaFont, color: textColor });
-
-        // Job Type Checkboxes
-        const checkboxSize = 12;
-        const jobTypes = formData.JobType || [];
-        
-        // Row 1
-        if (jobTypes.includes('Install')) {
-            page.drawText('X', { x: 52, y: 524, size: checkboxSize, font: helveticaFont, color: textColor });
-        }
-        if (jobTypes.includes('Pull')) {
-            page.drawText('X', { x: 52, y: 500, size: checkboxSize, font: helveticaFont, color: textColor });
-        }
-        if (jobTypes.includes('GasLift')) {
-            page.drawText('X', { x: 169, y: 526, size: checkboxSize, font: helveticaFont, color: textColor });
-        }
-        if (jobTypes.includes('GasInstall')) {
-            page.drawText('X', { x: 169, y: 500, size: checkboxSize, font: helveticaFont, color: textColor });
-        }
-        // Row 2
-        if (jobTypes.includes('CTSpooler')) {
-            page.drawText('X', { x: 294.09, y: 526, size: checkboxSize, font: helveticaFont, color: textColor });
-        }
-        if (jobTypes.includes('CableSpooler')) {
-            page.drawText('X', { x: 294.09, y: 500, size: checkboxSize, font: helveticaFont, color: textColor });
-        }
-        if (jobTypes.includes('ComboSpooler')) {
-            page.drawText('X', { x: 447.67, y: 526, size: checkboxSize, font: helveticaFont, color: textColor });
-        }
-        if (jobTypes.includes('TechnicianLaydown')) {
-            page.drawText('X', { x: 447.67, y: 500, size: checkboxSize, font: helveticaFont, color: textColor });
-        }
-
-        // Labor Costs
-        let laborY = 630;
-        const laborRowHeight = 18.5;
-        formData.LaborCosts?.forEach((labor) => {
-            page.drawText(labor.qty?.toString() || '0', { x: 327, y: laborY, size: fontSize, font: helveticaFont, color: textColor });
-            page.drawText(`$${labor.rate || '0.00'}`, { x: 135, y: laborY, size: fontSize, font: helveticaFont, color: textColor });
-            page.drawText(`$${labor.amount?.toFixed(2) || '0.00'}`, { x: 489, y: laborY, size: fontSize, font: helveticaFont, color: textColor });
-            laborY -= laborRowHeight;
-        });
-
-        // Consumables
-        let currentY = 453;
-        const consumableRowHeight = 26.5;
-        formData.Consumables?.forEach((consumable) => {
-            page.drawText(consumable.item || 'N/A', { x: 58, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
-            page.drawText(consumable.qty?.toString() || '0', { x: 262, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
-            page.drawText(`$${consumable.rate || '0.00'}`, { x: 365, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
-            page.drawText(`$${consumable.amount?.toFixed(2) || '0.00'}`, { x: 489, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
-            currentY -= consumableRowHeight;
-        });
-
-        // Notes
-        if (formData.Notes) {
-            const maxWidth = 550;
-            const lineHeight = 14;
-            let currentY = 150;
-            const words = formData.Notes.split(' ');
-            let line = '';
-            const lines = [];
-
-            for (const word of words) {
-                const testLine = line ? `${line} ${word}` : word;
-                const width = helveticaFont.widthOfTextAtSize(testLine, fontSize);
-                if (width <= maxWidth) {
-                    line = testLine;
-                } else {
-                    if (line) {
-                        lines.push(line);
-                    }
-                    line = word;
-                }
-            }
-            if (line) {
-                lines.push(line);
-            }
-
-            for (const lineText of lines) {
-                if (currentY < 50) {
-                    page = pdfDoc.addPage([595, 842]);
-                    currentY = 780;
-                    page.drawText('Notes (Continued)', { x: 18, y: currentY, size: 12, font: helveticaFont, color: textColor });
-                    currentY -= 35;
-                }
-                page.drawText(lineText, { x: 18, y: currentY, size: fontSize, font: helveticaFont, color: textColor });
-                currentY -= lineHeight;
-            }
-        }
-
-        // Footer
-        page.drawText(formData.CableLength?.toString() || 'N/A', { x: 108, y: 70, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.ReelNumber || 'N/A', { x: 292, y: 61, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(formData.CableType || 'N/A', { x: 82, y: 48, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(`$${formData.ExtraCharges?.toFixed(2) || '0.00'}`, { x: 293, y: 37, size: fontSize, font: helveticaFont, color: textColor });
-
-        // Invoice Total
-        page.drawText(`$${formData.InvoiceTotal?.toFixed(2) || ''}`, { x: 93, y: 25, size: fontSize, font: helveticaFont, color: textColor });
-
-        // Customer Signature
-        if (formData.CustomerSignature) {
-            try {
-                console.log('Converting signature for embedding...');
-                const imageBuffer = Buffer.from(formData.CustomerSignature, 'base64');
-                console.log('Embedding signature as PNG...');
-                const signatureImage = await pdfDoc.embedPng(imageBuffer);
-                page.drawImage(signatureImage, { x: 450, y: 36, width: 80, height: 40 });
-                console.log('Signature drawn on page.');
-            } catch (error) {
-                console.error('Error embedding signature to PDF:', error);
-            }
-        }
-
-        // Save PDF
-        const pdfBytes = await pdfDoc.save();
-        
-        // Upload to S3
-        const fileName = `invoice-${formData.WorkTicketID || 'Unknown'}-${Date.now()}.pdf`;
-        const params = {
-            Bucket: 'vip-completed-invoices',
-            Key: fileName,
-            Body: Buffer.from(pdfBytes),
-            ContentType: 'application/pdf',
-        };
-
-        await s3Client.send(new PutObjectCommand(params));
-        
-        // Return URL that goes through our backend instead of directly to S3
-        const pdfUrl = `${process.env.FRONTEND_URL || 'http://192.168.1.69:5000'}/api/pdf/${fileName}`;
-
-        res.status(200).json({
-            success: true,
-            message: 'PDF generated successfully',
-            pdfUrl: pdfUrl
-        });
-
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Failed to generate PDF'
-        });
-    }
-});
-
-// Serve PDF from S3 through our backend
-app.get('/api/pdf/:fileName', async (req, res) => {
-    try {
-        const { fileName } = req.params;
-        
-        const params = {
-            Bucket: 'vip-completed-invoices',
-            Key: fileName
-        };
-
-        const command = new GetObjectCommand(params);
-        const response = await s3Client.send(command);
-
-        // Set appropriate headers for PDF
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-        // Pipe the PDF stream to the response
-        response.Body.pipe(res);
-    } catch (error) {
-        console.error('Error serving PDF:', error);
-        res.status(404).json({ error: 'PDF not found' });
-    }
-});
 
 // Error handling middleware
 app.use(errorHandler);

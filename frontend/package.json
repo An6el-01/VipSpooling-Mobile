@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "start": "expo start --host 192.168.1.69",
+    "android": "expo start --android --host 192.168.1.69",
+    "ios": "expo start --ios --host 192.168.1.69",
+    "web": "expo start --web --host 192.168.1.69"
   },
   "dependencies": {
     "@aws-amplify/auth": "^6.0.0",
