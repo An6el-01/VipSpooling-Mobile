@@ -255,10 +255,6 @@ const ViewForm = () => {
                         onPress: () => sharePDF()
                     },
                     {
-                        text: 'Save to App Documents',
-                        onPress: () => downloadToLocation('documents')
-                    },
-                    {
                         text: 'Cancel',
                         style: 'cancel'
                     }

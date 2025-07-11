@@ -1018,49 +1018,88 @@ app.post('/api/generateJsaPDF', async (req, res) => {
 
         let page = pdfDoc.getPage(0);
         const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const fontSize = 12;
+        const fontSize = 8;
         const textColor = rgb(0, 0, 0);
 
-        // Header
-        page.drawText('JOB SAFETY ANALYSIS (JSA)', { x: 200, y: 800, size: 18, font: helveticaFont, color: textColor });
-        
         // Customer Information
-        page.drawText(`Customer: ${formData.CustomerName || 'N/A'}`, { x: 50, y: 750, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(`Location: ${formData.Location || 'N/A'}`, { x: 50, y: 730, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(`Effective Date: ${formData.EffectiveDate || 'N/A'}`, { x: 50, y: 710, size: fontSize, font: helveticaFont, color: textColor });
-        page.drawText(`Work Ticket ID: ${formData.WorkTicketID || 'N/A'}`, { x: 50, y: 690, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(`${formData.CustomerName || 'N/A'}`, { x: 165, y: 778, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(`${formData.Location || 'N/A'}`, { x: 225, y: 778, size: fontSize, font: helveticaFont, color: textColor });
+        page.drawText(`${formData.EffectiveDate || 'N/A'}`, { x: 165, y: 770, size: fontSize, font: helveticaFont, color: textColor });
 
-        // Personnel Section
-        page.drawText('PERSONNEL:', { x: 50, y: 650, size: 14, font: helveticaFont, color: textColor });
-        
-        let personnelY = 620;
-        formData.Personnel?.forEach((person, index) => {
-            page.drawText(`${index + 1}. ${person.PersonName || 'N/A'} - ${person.Role || 'N/A'}`, { 
-                x: 70, 
-                y: personnelY, 
-                size: fontSize, 
-                font: helveticaFont, 
-                color: textColor 
-            });
-            personnelY -= 25;
-        });
+        // Start with Steps Section
+        let currentY = 720;
 
         // Steps Section (if available)
         if (formData.Steps && formData.Steps.length > 0) {
-            page.drawText('JOB STEPS:', { x: 50, y: personnelY - 30, size: 14, font: helveticaFont, color: textColor });
             
-            let stepsY = personnelY - 60;
+            let stepsY = currentY - 30;
             formData.Steps.forEach((step, index) => {
-                page.drawText(`${index + 1}. ${step.taskStep || 'N/A'}`, { 
-                    x: 70, 
+                page.drawText(`${step.taskStep || 'N/A'}`, { 
+                    x: 520, 
                     y: stepsY, 
                     size: fontSize, 
                     font: helveticaFont, 
                     color: textColor 
                 });
-                stepsY -= 20;
+                stepsY -= 25;
             });
+            
+            // Update currentY to be below the steps
+            currentY = stepsY - 20; // Add some spacing after steps
         }
+
+        // Personnel Section - now positioned below steps
+        page.drawText('PERSONNEL:', { x: 50, y: currentY, size: 14, font: helveticaFont, color: textColor });
+        
+        let personnelY = currentY - 178;
+        for (const person of formData.Personnel || []) {
+            page.drawText(`${person.PersonName || 'N/A'}`, { 
+                x: 180, 
+                y: personnelY, 
+                size: fontSize, 
+                font: helveticaFont, 
+                color: textColor 
+            });
+            page.drawText(`${person.Role || 'N/A'}`, { 
+                x: 40, 
+                y: personnelY, 
+                size: fontSize, 
+                font: helveticaFont, 
+                color: textColor 
+            });
+            
+            // Draw signature image if available
+            if (person.Signature) {
+                try {
+                    console.log(`Converting signature for ${person.PersonName} to PNG...`);
+                    
+                    // Remove data URL prefix if present
+                    const base64Data = person.Signature.replace(/^data:image\/png;base64,/, '');
+                    const imageBuffer = Buffer.from(base64Data, 'base64');
+                    
+                    // Embed the PNG image
+                    console.log(`Embedding signature image for ${person.PersonName}...`);
+                    const signatureImage = await pdfDoc.embedPng(imageBuffer);
+                    
+                    // Draw the signature image
+                    page.drawImage(signatureImage, { 
+                        x: 430, 
+                        y: personnelY - 10, 
+                        width: 65, 
+                        height: 25 
+                    });
+                    
+                    console.log(`Signature drawn for ${person.PersonName}`);
+                } catch (error) {
+                    console.error(`Error embedding signature for ${person.PersonName}:`, error);
+                    // If signature fails, just continue without it
+                }
+            }
+            
+            personnelY -= 25;
+        }
+
+        
 
         // Save PDF
         const pdfBytes = await pdfDoc.save();
